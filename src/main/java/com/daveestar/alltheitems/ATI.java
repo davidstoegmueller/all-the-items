@@ -8,9 +8,12 @@ import java.util.stream.Collectors;
 import org.bukkit.Material;
 import org.bukkit.configuration.file.FileConfiguration;
 
+import com.daveestar.alltheitems.utils.Bossbar;
 import com.daveestar.alltheitems.utils.Config;
 
 public class ATI {
+  public Bossbar bossbar;
+
   private Config atiConfig;
   private FileConfiguration fileCfgn;
 
@@ -19,50 +22,6 @@ public class ATI {
     this.fileCfgn = atiConfig.getFileCfgrn();
 
     this._init();
-  }
-
-  public void reset() {
-    List<String> itemList = this._getAllItemList();
-
-    this.fileCfgn.set("active", null);
-    this.fileCfgn.set("open", itemList);
-    this.fileCfgn.set("done", null);
-
-    this.atiConfig.save();
-
-    this._setNewItem(false);
-  }
-
-  /**
-   * Initialize the gamemode.
-   * Check if the mode is already running.
-   * If its a new run - generate the item list and choose a random item.
-   */
-  private void _init() {
-    // check if the gamemode is already running
-    // if not we will reset the cconfiguration which create a new game
-    if (this._getActiveItem() == null) {
-      this.reset();
-    }
-  }
-
-  /**
-   * Get a list of all items excluding items on the block-list.
-   */
-  private List<String> _getAllItemList() {
-    // define a list of blocked items eg. not obtainable in survival
-    List<Material> blockedMaterials = Arrays.asList(Material.AIR, Material.SPAWNER, Material.SUSPICIOUS_GRAVEL,
-        Material.SUSPICIOUS_SAND, Material.FARMLAND, Material.BARRIER, Material.LIGHT, Material.STRUCTURE_VOID,
-        Material.STRUCTURE_BLOCK, Material.JIGSAW, Material.PLAYER_HEAD, Material.DEBUG_STICK,
-        Material.BUDDING_AMETHYST, Material.FROGSPAWN, Material.BUNDLE);
-
-    // filter all the materials check if its an item and NOT on the blocklist
-    List<Material> materials = Arrays.stream(Material.values())
-        .filter(material -> material.isItem() && !blockedMaterials.contains(material))
-        .collect(Collectors.toList());
-
-    // return items as a string list
-    return materials.stream().map(material -> material.name()).collect(Collectors.toList());
   }
 
   /**
@@ -74,7 +33,7 @@ public class ATI {
    * The current item will be removed from the open list.
    * The current item will be added to the done list.
    */
-  private void _setNewItem(Boolean skipItem) {
+  public void setNewItem(Boolean skipItem) {
     // get all open items
     List<String> openItems = this._getOpenItems();
     System.out.println("before manipulating items: " + this._getOpenItems().size());
@@ -111,17 +70,93 @@ public class ATI {
     // save the current configuration to the file
     this.atiConfig.save();
 
+    // set the new item as bossbar text
+    this.bossbar.modifyBossbar(newItem);
+
     System.out.println("after manipulating items: " + this._getOpenItems().size());
   }
 
+  /**
+   * Reset the current game and start a new one.
+   */
+  public void reset() {
+    List<String> itemList = this._getAllItemList();
+
+    this.fileCfgn.set("active", null);
+    this.fileCfgn.set("open", itemList);
+    this.fileCfgn.set("done", null);
+
+    this.atiConfig.save();
+
+    this.setNewItem(false);
+  }
+
+  /**
+   * Handle actions to unload the ati gamemode.
+   */
+  public void unload() {
+    this.bossbar.destroy();
+  }
+
+  // ---------------
+  // PRIVATE METHODS
+  // ---------------
+
+  /**
+   * Initialize the gamemode.
+   * Check if the mode is already running.
+   * If its a new run - generate the item list and choose a random item.
+   */
+  private void _init() {
+    // check if the gamemode is already running
+    // if not we will reset the cconfiguration which create a new game
+    if (this._getActiveItem() == null) {
+      this.reset();
+    }
+
+    // create the bossbar
+    bossbar = new Bossbar();
+
+    // set the current item in bossbar text
+    this.bossbar.modifyBossbar(this._getActiveItem());
+  }
+
+  /**
+   * Get a list of all items excluding items on the block-list.
+   */
+  private List<String> _getAllItemList() {
+    // define a list of blocked items eg. not obtainable in survival
+    List<Material> blockedMaterials = Arrays.asList(Material.AIR, Material.SPAWNER, Material.SUSPICIOUS_GRAVEL,
+        Material.SUSPICIOUS_SAND, Material.FARMLAND, Material.BARRIER, Material.LIGHT, Material.STRUCTURE_VOID,
+        Material.STRUCTURE_BLOCK, Material.JIGSAW, Material.PLAYER_HEAD, Material.DEBUG_STICK,
+        Material.BUDDING_AMETHYST, Material.FROGSPAWN, Material.BUNDLE);
+
+    // filter all the materials check if its an item and NOT on the blocklist
+    List<Material> materials = Arrays.stream(Material.values())
+        .filter(material -> material.isItem() && !blockedMaterials.contains(material))
+        .collect(Collectors.toList());
+
+    // return items as a string list
+    return materials.stream().map(material -> material.name()).collect(Collectors.toList());
+  }
+
+  /**
+   * Get the current active item name as a string.
+   */
   private String _getActiveItem() {
     return this.fileCfgn.getString("active");
   }
 
+  /**
+   * Get all open item names as a string list.
+   */
   private List<String> _getOpenItems() {
     return this.fileCfgn.getStringList("open");
   }
 
+  /**
+   * Get all done item names as a string list.
+   */
   private List<String> _getDoneItems() {
     return this.fileCfgn.getStringList("done");
   }
