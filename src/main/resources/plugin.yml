@@ -4,3 +4,11 @@ version: 1.0.0
 api-version: 1.20
 authors: ["daveestar"]
 commands:
+  reset:
+    description: Reset the current run and start a new one.
+    usage: /reset
+    permission: alltheitems.reset
+  skipitem:
+    description: Skip the current item but do not mark as done.
+    usage: /skipitem
+    permission: alltheitems.skipitem
