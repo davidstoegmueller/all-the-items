@@ -7,6 +7,8 @@ import org.bukkit.plugin.java.JavaPlugin;
 
 import com.daveestar.alltheitems.commands.AllTheItemsCommand;
 import com.daveestar.alltheitems.enums.Permissions;
+import com.daveestar.alltheitems.manager.AllTheItemsManager;
+import com.daveestar.alltheitems.utils.Config;
 
 import net.md_5.bungee.api.ChatColor;
 
@@ -15,9 +17,16 @@ public class Main extends JavaPlugin {
   private static final Logger LOGGER = Logger.getLogger("alltheitems");
   private static final int BSTATS_PLUGIN_ID = 29352;
 
+  private AllTheItemsManager _allTheItemsManager;
+
   @Override
   public void onEnable() {
     _mainInstance = this;
+
+    Config allTheItemsConfig = new Config("alltheitems.yml", getDataFolder());
+
+    _allTheItemsManager = new AllTheItemsManager(allTheItemsConfig);
+    _allTheItemsManager.initGamemode();
 
     _registerCommands();
     _registerEvents();
@@ -31,6 +40,14 @@ public class Main extends JavaPlugin {
   @Override
   public void onDisable() {
     LOGGER.info("All the Items - DISABLED");
+  }
+
+  public static Main getInstance() {
+    return _mainInstance;
+  }
+
+  public AllTheItemsManager getAllTheItemsManager() {
+    return _allTheItemsManager;
   }
 
   // --------------------------

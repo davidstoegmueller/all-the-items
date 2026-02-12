@@ -30,9 +30,16 @@ public class AllTheItemsCommand implements CommandExecutor {
       return true;
     }
 
-    // if the player has the permission and used the command correctly -> open GUI
-    // TODO: open GUI
-    p.sendMessage("open gui");
+    if (Main.getInstance().getAllTheItemsManager().isComplete()) {
+      p.sendMessage(
+          Main.getPrefix() + ChatColor.RED + "All items are already completed. No further action is possible.");
+      return true;
+    }
+
+    String nextItem = Main.getInstance().getAllTheItemsManager().setRandomNextItem();
+    String nextItemLabel = nextItem == null ? "<none>" : nextItem;
+    Main.getInstance().getLogger().info("Debug switched current item to " + nextItemLabel);
+    p.sendMessage(Main.getPrefix() + ChatColor.YELLOW + "Debug: next item is " + nextItemLabel);
 
     return true;
   }
