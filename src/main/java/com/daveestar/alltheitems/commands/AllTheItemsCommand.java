@@ -7,10 +7,17 @@ import org.bukkit.entity.Player;
 
 import com.daveestar.alltheitems.Main;
 import com.daveestar.alltheitems.enums.Permissions;
+import com.daveestar.alltheitems.gui.CurrentItemsGUI;
 
 import net.md_5.bungee.api.ChatColor;
 
 public class AllTheItemsCommand implements CommandExecutor {
+  private final CurrentItemsGUI _currentItemsGUI;
+
+  public AllTheItemsCommand() {
+    _currentItemsGUI = new CurrentItemsGUI();
+  }
+
   @Override
   public boolean onCommand(CommandSender cs, Command c, String label, String[] args) {
     if (!(cs instanceof Player)) {
@@ -30,16 +37,7 @@ public class AllTheItemsCommand implements CommandExecutor {
       return true;
     }
 
-    if (Main.getInstance().getAllTheItemsManager().isComplete()) {
-      p.sendMessage(
-          Main.getPrefix() + ChatColor.RED + "All items are already completed. No further action is possible.");
-      return true;
-    }
-
-    String nextItem = Main.getInstance().getAllTheItemsManager().setRandomNextItem();
-    String nextItemLabel = nextItem == null ? "<none>" : nextItem;
-    Main.getInstance().getLogger().info("Debug switched current item to " + nextItemLabel);
-    p.sendMessage(Main.getPrefix() + ChatColor.YELLOW + "Debug: next item is " + nextItemLabel);
+    _currentItemsGUI.displayCurrentItemsGUI(p);
 
     return true;
   }
