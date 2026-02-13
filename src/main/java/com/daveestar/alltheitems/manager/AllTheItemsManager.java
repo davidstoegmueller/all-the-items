@@ -155,6 +155,10 @@ public class AllTheItemsManager {
     return _stateFileConfig.getBoolean(_KEY_COMPLETE, false);
   }
 
+  public boolean isDevMode() {
+    return _DEV_MODE;
+  }
+
   // ----------------
   // PICK RANDOM ITEM
   // ----------------
@@ -216,11 +220,11 @@ public class AllTheItemsManager {
   // TYPES
   // -----
 
-  private static class CollectedItem {
+  public static class CollectedItem {
     private final String _name;
     private final long _timestamp;
 
-    private CollectedItem(String name, long timestamp) {
+    public CollectedItem(String name, long timestamp) {
       this._name = name;
       this._timestamp = timestamp;
     }

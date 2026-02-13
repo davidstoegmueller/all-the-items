@@ -1,6 +1,6 @@
 package com.daveestar.alltheitems.gui;
 
-import java.util.Collections;
+import java.util.EnumSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -26,16 +26,24 @@ public class CurrentItemsGUI {
   private static final String _GUI_LORE_PREFIX = ChatColor.YELLOW + "» " + ChatColor.GRAY;
 
   private static final String _KEY_CURRENT_ITEM = "currentItem";
+  private static final String _KEY_REMAINING_ITEMS = "action::openRemainingItems";
+  private static final String _KEY_COLLECTED_ITEMS = "action::openCollectedItems";
 
   private static final int _GUI_ROWS = 2;
   private static final int _CURRENT_ITEM_SLOT = 4;
+  private static final int _REMAINING_ITEMS_SLOT = 13;
+  private static final int _COLLECTED_ITEMS_SLOT = 14;
 
   private final Main _plugin;
   private final AllTheItemsManager _allTheItemsManager;
+  private final RemainingItemsGUI _remainingItemsGUI;
+  private final CollectedItemsGUI _collectedItemsGUI;
 
   public CurrentItemsGUI() {
     _plugin = Main.getInstance();
     _allTheItemsManager = _plugin.getAllTheItemsManager();
+    _remainingItemsGUI = new RemainingItemsGUI();
+    _collectedItemsGUI = new CollectedItemsGUI();
   }
 
   public void displayCurrentItemsGUI(Player p) {
@@ -53,9 +61,31 @@ public class CurrentItemsGUI {
         _GUI_ROWS,
         customSlots,
         null,
-        Collections.singleton(CustomGUI.Option.DISABLE_PAGE_BUTTON));
+        EnumSet.of(CustomGUI.Option.DISABLE_PAGE_BUTTON));
 
     Map<String, CustomGUI.ClickAction> actions = new LinkedHashMap<>();
+    if (_allTheItemsManager.isDevMode()) {
+      actions.put(_KEY_CURRENT_ITEM, _clickAction(
+          player -> _handleDevAdvanceCurrentItem(player),
+          null,
+          null,
+          null));
+    }
+
+    actions.put(_KEY_REMAINING_ITEMS, _clickAction(
+        player -> _remainingItemsGUI.displayRemainingItemsGUI(player, currentItemsGUI),
+        null,
+        null,
+        null));
+
+    actions.put(_KEY_COLLECTED_ITEMS, _clickAction(
+        player -> _collectedItemsGUI.displayCollectedItemsGUI(player, currentItemsGUI),
+        null,
+        null,
+        null));
+
+    currentItemsGUI.addFooterEntry(_KEY_REMAINING_ITEMS, _createOpenRemainingItemsItem(), _REMAINING_ITEMS_SLOT);
+    currentItemsGUI.addFooterEntry(_KEY_COLLECTED_ITEMS, _createOpenCollectedItemsItem(), _COLLECTED_ITEMS_SLOT);
     currentItemsGUI.setClickActions(actions);
 
     currentItemsGUI.open(p);
@@ -86,19 +116,20 @@ public class CurrentItemsGUI {
               _GUI_LORE_PREFIX + "Something went wrong while fetching the current item."));
     }
 
-    String translatedItemKey = currentMaterial.getItemTranslationKey();
-
-    Component itemNameComponent = Component.translatable(translatedItemKey);
-    String itemName = PlainTextComponentSerializer.plainText()
-        .serialize(itemNameComponent);
-
     return _createItem(
         currentMaterial,
-        _GUI_ITEM_PREFIX + itemName,
+        _GUI_ITEM_PREFIX + _getTranslatedItemName(currentMaterial),
         List.of(
             "",
             _GUI_LORE_PREFIX + "#1",
             _GUI_LORE_PREFIX + "Collect this item to progress."));
+  }
+
+  private String _getTranslatedItemName(Material material) {
+    String translatedItemKey = material.getItemTranslationKey();
+    Component itemNameComponent = Component.translatable(translatedItemKey);
+
+    return PlainTextComponentSerializer.plainText().serialize(itemNameComponent);
   }
 
   private ItemStack _createItem(Material material, String displayName, List<String> lore) {
@@ -115,6 +146,47 @@ public class CurrentItemsGUI {
     item.setItemMeta(meta);
 
     return item;
+  }
+
+  private ItemStack _createOpenRemainingItemsItem() {
+    return _createItem(
+        Material.CHEST,
+        _GUI_ITEM_PREFIX + "Remaining Items",
+        List.of(
+            "",
+            _GUI_LORE_PREFIX + "Open all remaining items.",
+            "",
+            _GUI_LORE_PREFIX + "Left-Click: Open"));
+  }
+
+  private ItemStack _createOpenCollectedItemsItem() {
+    return _createItem(
+        Material.ENDER_CHEST,
+        _GUI_ITEM_PREFIX + "Collected Items",
+        List.of(
+            "",
+            _GUI_LORE_PREFIX + "Open all collected items.",
+            "",
+            _GUI_LORE_PREFIX + "Left-Click: Open"));
+  }
+
+  private void _handleDevAdvanceCurrentItem(Player p) {
+    if (!_allTheItemsManager.isDevMode()) {
+      return;
+    }
+
+    String nextItem = _allTheItemsManager.setRandomNextItem();
+    if (nextItem == null) {
+      p.sendMessage(Main.getPrefix() + ChatColor.GREEN + "All items are now completed.");
+    } else {
+      Material nextMaterial = Material.matchMaterial(nextItem);
+      String nextName = nextMaterial == null ? nextItem : _getTranslatedItemName(nextMaterial);
+
+      p.sendMessage(Main.getPrefix() + ChatColor.GRAY + "Next item is now " + ChatColor.YELLOW + nextName
+          + ChatColor.GRAY + ".");
+    }
+
+    displayCurrentItemsGUI(p);
   }
 
   private CustomGUI.ClickAction _clickAction(Consumer<Player> onLeft, Consumer<Player> onRight,
