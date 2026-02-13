@@ -18,39 +18,45 @@ import org.bukkit.configuration.file.FileConfiguration;
 import com.daveestar.alltheitems.utils.Config;
 
 public class AllTheItemsManager {
-  private static final String KEY_REMAINING = "remaining";
-  private static final String KEY_COLLECTED = "collected";
-  private static final String KEY_CURRENT = "current";
-  private static final String KEY_COMPLETE = "complete";
-  private static final String KEY_COLLECTED_NAME = "name";
-  private static final String KEY_COLLECTED_TIMESTAMP = "timestamp";
+  private static final String _KEY_REMAINING = "remaining";
+  private static final String _KEY_COLLECTED = "collected";
+  private static final String _KEY_CURRENT = "current";
+  private static final String _KEY_COMPLETE = "complete";
+  private static final String _KEY_COLLECTED_NAME = "name";
+  private static final String _KEY_COLLECTED_TIMESTAMP = "timestamp";
 
-  private static final Set<Material> _NON_OBTAINABLE_ITEMS = Set.of(
-      Material.BARRIER,
-      Material.COMMAND_BLOCK,
-      Material.CHAIN_COMMAND_BLOCK,
-      Material.REPEATING_COMMAND_BLOCK,
-      Material.COMMAND_BLOCK_MINECART,
-      Material.STRUCTURE_BLOCK,
-      Material.STRUCTURE_VOID,
-      Material.JIGSAW,
-      Material.DEBUG_STICK,
-      Material.LIGHT);
+  private static final String _KEY_EXCLUDED_ITEMS = "items.excluded";
 
-  private final Config _config;
-  private final FileConfiguration _fileConfig;
+  private static final boolean _DEV_MODE = true;
+  private static final List<Material> _DEV_MODE_ITEMS = Arrays.asList(
+      Material.STONE,
+      Material.OAK_LOG,
+      Material.IRON_INGOT,
+      Material.BREAD,
+      Material.TORCH,
+      Material.COBBLESTONE,
+      Material.DIRT,
+      Material.CRAFTING_TABLE,
+      Material.APPLE,
+      Material.GLASS);
 
-  public AllTheItemsManager(Config config) {
-    _config = config;
-    _fileConfig = config.getFileConfig();
+  private final Config _stateConfig;
+  private final FileConfiguration _stateFileConfig;
+  private final FileConfiguration _settingsFileConfig;
+
+  public AllTheItemsManager(Config stateConfig, Config settingsConfig) {
+    this._stateConfig = stateConfig;
+
+    this._stateFileConfig = stateConfig.getFileConfig();
+    this._settingsFileConfig = settingsConfig.getFileConfig();
   }
 
   public void initGamemode() {
-    if (_isComplete()) {
+    if (isComplete()) {
       return;
     }
 
-    List<String> remainingItems = _getRemainingItems();
+    List<String> remainingItems = getRemainingItems();
 
     if (remainingItems.isEmpty()) {
       resetGamemode();
@@ -71,19 +77,26 @@ public class AllTheItemsManager {
   }
 
   public String setRandomNextItem() {
-    if (_isComplete()) {
+    if (isComplete()) {
       return null;
     }
 
-    List<String> remainingItems = _getRemainingItems();
-    Map<String, CollectedItem> collectedItems = _getCollectedItems();
+    List<String> remainingItems = getRemainingItems();
+    Map<String, CollectedItem> collectedItems = getCollectedItems();
 
     if (remainingItems.isEmpty()) {
       _saveState(remainingItems, collectedItems, null);
       return null;
     }
 
-    String currentItem = _getCurrentItem();
+    String currentItem = getCurrentItem();
+
+    if (currentItem == null || !remainingItems.contains(currentItem)) {
+      String nextItem = _pickRandomRemainingItem(remainingItems);
+      _saveState(remainingItems, collectedItems, nextItem);
+      return nextItem;
+    }
+
     remainingItems.remove(currentItem);
 
     String uid = UUID.randomUUID().toString();
@@ -101,8 +114,45 @@ public class AllTheItemsManager {
     return nextItem;
   }
 
+  // ------------------
+  // GET CONFIG ENTRIES
+  // ------------------
+
+  public List<String> getRemainingItems() {
+    List<String> remainingItems = _stateFileConfig.getStringList(_KEY_REMAINING);
+    return new ArrayList<>(remainingItems);
+  }
+
+  public Map<String, CollectedItem> getCollectedItems() {
+    Map<String, CollectedItem> collectedItems = new HashMap<>();
+    ConfigurationSection collectedSection = _stateFileConfig.getConfigurationSection(_KEY_COLLECTED);
+
+    if (collectedSection == null) {
+      return collectedItems;
+    }
+
+    for (String uid : collectedSection.getKeys(false)) {
+      ConfigurationSection collectedItemSection = collectedSection.getConfigurationSection(uid);
+
+      if (collectedItemSection == null) {
+        continue;
+      }
+
+      String itemName = collectedItemSection.getString(_KEY_COLLECTED_NAME, "");
+      long timestamp = collectedItemSection.getLong(_KEY_COLLECTED_TIMESTAMP, 0L);
+
+      collectedItems.put(uid, new CollectedItem(itemName, timestamp));
+    }
+
+    return collectedItems;
+  }
+
+  public String getCurrentItem() {
+    return _stateFileConfig.getString(_KEY_CURRENT);
+  }
+
   public boolean isComplete() {
-    return _isComplete();
+    return _stateFileConfig.getBoolean(_KEY_COMPLETE, false);
   }
 
   // ----------------
@@ -113,82 +163,51 @@ public class AllTheItemsManager {
     return remainingItems.get(ThreadLocalRandom.current().nextInt(remainingItems.size()));
   }
 
-  // ------------------
-  // GET CONFIG ENTRIES
-  // ------------------
-
-  private List<String> _getRemainingItems() {
-    List<String> remainingItems = _fileConfig.getStringList(KEY_REMAINING);
-    return new ArrayList<>(remainingItems);
-  }
-
-  private Map<String, CollectedItem> _getCollectedItems() {
-    Map<String, CollectedItem> collectedItems = new HashMap<>();
-    ConfigurationSection collectedSection = _fileConfig.getConfigurationSection(KEY_COLLECTED);
-
-    if (collectedSection == null) {
-      return collectedItems;
-    }
-
-    for (String uid : collectedSection.getKeys(false)) {
-      ConfigurationSection collectedItemSection = collectedSection.getConfigurationSection(uid);
-
-      String itemName = collectedItemSection.getString(KEY_COLLECTED_NAME, "");
-      long timestamp = collectedItemSection.getLong(KEY_COLLECTED_TIMESTAMP, 0L);
-
-      collectedItems.put(uid, new CollectedItem(itemName, timestamp));
-    }
-
-    return collectedItems;
-  }
-
-  private String _getCurrentItem() {
-    return _fileConfig.getString(KEY_CURRENT);
-  }
-
-  private boolean _isComplete() {
-    return _fileConfig.getBoolean(KEY_COMPLETE, false);
-  }
-
   // --------------
   // SAVE TO CONFIG
   // --------------
 
   private void _saveState(List<String> remainingItems, Map<String, CollectedItem> collectedItems, String currentItem) {
-    _fileConfig.set(KEY_REMAINING, new ArrayList<>(remainingItems));
-    _fileConfig.set(KEY_CURRENT, currentItem);
-    _fileConfig.set(KEY_COMPLETE, remainingItems.isEmpty());
-    _fileConfig.set(KEY_COLLECTED, null);
+    _stateFileConfig.set(_KEY_REMAINING, new ArrayList<>(remainingItems));
+    _stateFileConfig.set(_KEY_CURRENT, currentItem);
+    _stateFileConfig.set(_KEY_COMPLETE, remainingItems.isEmpty());
+    _stateFileConfig.set(_KEY_COLLECTED, null);
 
-    ConfigurationSection collectedSection = _fileConfig.createSection(KEY_COLLECTED);
+    ConfigurationSection collectedSection = _stateFileConfig.createSection(_KEY_COLLECTED);
     for (Entry<String, CollectedItem> collectedItem : collectedItems.entrySet()) {
       ConfigurationSection itemSection = collectedSection.createSection(collectedItem.getKey());
 
-      itemSection.set(KEY_COLLECTED_NAME, collectedItem.getValue().getName());
-      itemSection.set(KEY_COLLECTED_TIMESTAMP, collectedItem.getValue().getTimestamp());
+      itemSection.set(_KEY_COLLECTED_NAME, collectedItem.getValue().getName());
+      itemSection.set(_KEY_COLLECTED_TIMESTAMP, collectedItem.getValue().getTimestamp());
     }
 
-    _config.save();
+    _stateConfig.save();
+  }
+
+  private Set<Material> _getExcludedItemsFromConfig() {
+    return _settingsFileConfig.getStringList(_KEY_EXCLUDED_ITEMS)
+        .stream()
+        .map(String::trim)
+        .filter(value -> !value.isEmpty())
+        .map(this::_parseMaterialOrNull)
+        .filter(material -> material != null)
+        .collect(Collectors.toSet());
+  }
+
+  private Material _parseMaterialOrNull(String materialName) {
+    return Material.matchMaterial(materialName);
   }
 
   private List<Material> _getAllItems() {
-    // List<Material> materials = Arrays.stream(Material.values())
-    // .filter(material -> material.isItem() &&
-    // !_NON_OBTAINABLE_ITEMS.contains(material))
-    // .collect(Collectors.toList());
+    if (_DEV_MODE) {
+      return new ArrayList<>(_DEV_MODE_ITEMS);
+    }
 
-    // define manual list of materials for testing purposes
-    List<Material> materials = Arrays.asList(
-        Material.STONE,
-        Material.GRASS_BLOCK,
-        Material.DIRT,
-        Material.COBBLESTONE,
-        Material.OAK_LOG,
-        Material.SPRUCE_LOG,
-        Material.BIRCH_LOG,
-        Material.JUNGLE_LOG,
-        Material.ACACIA_LOG,
-        Material.DARK_OAK_LOG);
+    Set<Material> excludedItems = _getExcludedItemsFromConfig();
+
+    List<Material> materials = Arrays.stream(Material.values())
+        .filter(material -> material.isItem() && !excludedItems.contains(material))
+        .collect(Collectors.toList());
 
     return materials;
   }
@@ -198,20 +217,20 @@ public class AllTheItemsManager {
   // -----
 
   private static class CollectedItem {
-    private final String name;
-    private final long timestamp;
+    private final String _name;
+    private final long _timestamp;
 
     private CollectedItem(String name, long timestamp) {
-      this.name = name;
-      this.timestamp = timestamp;
+      this._name = name;
+      this._timestamp = timestamp;
     }
 
     public String getName() {
-      return name;
+      return _name;
     }
 
     public long getTimestamp() {
-      return timestamp;
+      return _timestamp;
     }
   }
 }

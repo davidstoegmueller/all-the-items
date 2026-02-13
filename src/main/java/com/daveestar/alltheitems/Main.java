@@ -23,9 +23,10 @@ public class Main extends JavaPlugin {
   public void onEnable() {
     _mainInstance = this;
 
-    Config allTheItemsConfig = new Config("alltheitems.yml", getDataFolder());
+    Config stateConfig = new Config("state.yml", getDataFolder());
+    Config settingsConfig = new Config("settings.yml", getDataFolder(), this, true);
 
-    _allTheItemsManager = new AllTheItemsManager(allTheItemsConfig);
+    _allTheItemsManager = new AllTheItemsManager(stateConfig, settingsConfig);
     _allTheItemsManager.initGamemode();
 
     _registerCommands();
