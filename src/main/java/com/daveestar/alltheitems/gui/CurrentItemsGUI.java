@@ -30,6 +30,7 @@ public class CurrentItemsGUI {
   private static final String _KEY_CURRENT_ITEM = "currentItem";
   private static final String _KEY_REMAINING_ITEMS = "action::openRemainingItems";
   private static final String _KEY_COLLECTED_ITEMS = "action::openCollectedItems";
+  private static final String _KEY_TOP_PLACEHOLDER_PREFIX = "topPlaceholder::";
 
   private static final int _GUI_ROWS = 2;
   private static final int _CURRENT_ITEM_SLOT = 4;
@@ -54,6 +55,7 @@ public class CurrentItemsGUI {
 
     Map<String, Integer> customSlots = new LinkedHashMap<>();
     customSlots.put(_KEY_CURRENT_ITEM, _CURRENT_ITEM_SLOT);
+    _addPlaceholders(entries, customSlots);
 
     CustomGUI currentItemsGUI = new CustomGUI(
         _plugin,
@@ -165,6 +167,22 @@ public class CurrentItemsGUI {
             _GUI_LORE_PREFIX + "Left-Click: Open"));
   }
 
+  private ItemStack _createPlaceholderItem() {
+    return _createItem(Material.YELLOW_STAINED_GLASS_PANE, ChatColor.YELLOW + "*", false, null);
+  }
+
+  private void _addPlaceholders(Map<String, ItemStack> entries, Map<String, Integer> customSlots) {
+    for (int slot = 0; slot < 9; slot++) {
+      if (slot == _CURRENT_ITEM_SLOT) {
+        continue;
+      }
+
+      String key = _KEY_TOP_PLACEHOLDER_PREFIX + slot;
+      entries.put(key, _createPlaceholderItem());
+      customSlots.put(key, slot);
+    }
+  }
+
   // -----------
   // ITEM HELPER
   // -----------
@@ -178,7 +196,11 @@ public class CurrentItemsGUI {
     }
 
     meta.displayName(Component.text(displayName));
-    meta.lore(lore.stream().map(Component::text).toList());
+
+    if (lore != null) {
+      meta.lore(lore.stream().map(Component::text).toList());
+    }
+
     meta.addItemFlags(ItemFlag.HIDE_ATTRIBUTES);
     meta.setEnchantmentGlintOverride(setEnchanted);
     item.setItemMeta(meta);

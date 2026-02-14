@@ -79,6 +79,7 @@ public class RemainingItemsGUI {
       return _createItem(
           Material.BARRIER,
           _GUI_ITEM_PREFIX + itemName,
+          false,
           List.of(
               "",
               _GUI_LORE_PREFIX + "Invalid material in remaining list."));
@@ -87,6 +88,7 @@ public class RemainingItemsGUI {
     return _createItem(
         material,
         _GUI_ITEM_PREFIX + _getTranslatedItemName(material),
+        false,
         List.of(
             "",
             _GUI_LORE_PREFIX + ChatColor.RED + "NOT COLLECTED"));
@@ -99,7 +101,7 @@ public class RemainingItemsGUI {
     return PlainTextComponentSerializer.plainText().serialize(itemNameComponent);
   }
 
-  private ItemStack _createItem(Material material, String displayName, List<String> lore) {
+  private ItemStack _createItem(Material material, String displayName, boolean setEnchanted, List<String> lore) {
     ItemStack item = new ItemStack(material);
     ItemMeta meta = item.getItemMeta();
 
@@ -108,8 +110,13 @@ public class RemainingItemsGUI {
     }
 
     meta.displayName(Component.text(displayName));
-    meta.lore(lore.stream().map(Component::text).toList());
+
+    if (lore != null) {
+      meta.lore(lore.stream().map(Component::text).toList());
+    }
+
     meta.addItemFlags(ItemFlag.HIDE_ATTRIBUTES);
+    meta.setEnchantmentGlintOverride(setEnchanted);
     item.setItemMeta(meta);
 
     return item;
