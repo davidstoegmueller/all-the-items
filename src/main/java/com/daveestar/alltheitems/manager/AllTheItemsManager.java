@@ -2,6 +2,7 @@ package com.daveestar.alltheitems.manager;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.LinkedHashSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -21,9 +22,11 @@ public class AllTheItemsManager {
   private static final String _KEY_REMAINING = "remaining";
   private static final String _KEY_COLLECTED = "collected";
   private static final String _KEY_CURRENT = "current";
+  private static final String _KEY_QUEUE = "queue";
   private static final String _KEY_COMPLETE = "complete";
   private static final String _KEY_COLLECTED_NAME = "name";
   private static final String _KEY_COLLECTED_TIMESTAMP = "timestamp";
+  private static final int _TARGET_QUEUE_SIZE = 3;
 
   private static final String _KEY_EXCLUDED_ITEMS = "items.excluded";
 
@@ -60,6 +63,7 @@ public class AllTheItemsManager {
 
     if (remainingItems.isEmpty()) {
       resetGamemode();
+      return;
     }
   }
 
@@ -71,9 +75,10 @@ public class AllTheItemsManager {
 
     List<String> remainingItems = new ArrayList<>(allItemNames);
     Map<String, CollectedItem> collectedItems = new HashMap<>();
-    String currentItem = _pickRandomRemainingItem(remainingItems);
+    List<String> itemQueue = new ArrayList<>();
+    _fillQueue(itemQueue, remainingItems, null);
 
-    _saveState(remainingItems, collectedItems, currentItem);
+    _saveState(remainingItems, collectedItems, itemQueue);
   }
 
   public String nextItem() {
@@ -83,18 +88,19 @@ public class AllTheItemsManager {
 
     List<String> remainingItems = getRemainingItems();
     Map<String, CollectedItem> collectedItems = getCollectedItems();
+    List<String> itemQueue = _getNormalizedQueue(remainingItems);
 
-    if (remainingItems.isEmpty()) {
-      _saveState(remainingItems, collectedItems, null);
+    if (itemQueue.isEmpty()) {
+      _saveState(remainingItems, collectedItems, itemQueue);
       return null;
     }
 
-    String currentItem = getCurrentItem();
+    String currentItem = itemQueue.remove(0);
 
     if (currentItem == null || !remainingItems.contains(currentItem)) {
-      String nextItem = _pickRandomRemainingItem(remainingItems);
-      _saveState(remainingItems, collectedItems, nextItem);
-      return nextItem;
+      _fillQueue(itemQueue, remainingItems, null);
+      _saveState(remainingItems, collectedItems, itemQueue);
+      return itemQueue.isEmpty() ? null : itemQueue.get(0);
     }
 
     remainingItems.remove(currentItem);
@@ -102,16 +108,10 @@ public class AllTheItemsManager {
     String uid = UUID.randomUUID().toString();
     collectedItems.put(uid, new CollectedItem(currentItem, System.currentTimeMillis()));
 
-    if (remainingItems.isEmpty()) {
-      _saveState(remainingItems, collectedItems, null);
-      return null;
-    }
+    _fillQueue(itemQueue, remainingItems, null);
+    _saveState(remainingItems, collectedItems, itemQueue);
 
-    String nextItem = _pickRandomRemainingItem(remainingItems);
-
-    _saveState(remainingItems, collectedItems, nextItem);
-
-    return nextItem;
+    return itemQueue.isEmpty() ? null : itemQueue.get(0);
   }
 
   public String skipItem() {
@@ -121,11 +121,19 @@ public class AllTheItemsManager {
 
     List<String> remainingItems = getRemainingItems();
     Map<String, CollectedItem> collectedItems = getCollectedItems();
+    List<String> itemQueue = _getNormalizedQueue(remainingItems);
 
-    String nextItem = _pickRandomRemainingItem(remainingItems);
-    _saveState(remainingItems, collectedItems, nextItem);
+    if (itemQueue.isEmpty()) {
+      _saveState(remainingItems, collectedItems, itemQueue);
+      return null;
+    }
 
-    return nextItem;
+    String skippedItem = itemQueue.remove(0);
+
+    _fillQueue(itemQueue, remainingItems, skippedItem);
+    _saveState(remainingItems, collectedItems, itemQueue);
+
+    return itemQueue.isEmpty() ? null : itemQueue.get(0);
   }
 
   // ------------------
@@ -162,7 +170,19 @@ public class AllTheItemsManager {
   }
 
   public String getCurrentItem() {
-    return _stateFileConfig.getString(_KEY_CURRENT);
+    List<String> itemQueue = getQueue();
+    return itemQueue.isEmpty() ? null : itemQueue.get(0);
+  }
+
+  public List<String> getQueue() {
+    List<String> remainingItems = getRemainingItems();
+    List<String> itemQueue = _getNormalizedQueue(remainingItems);
+
+    if (!itemQueue.equals(_stateFileConfig.getStringList(_KEY_QUEUE))) {
+      _saveState(remainingItems, getCollectedItems(), itemQueue);
+    }
+
+    return itemQueue;
   }
 
   public boolean isComplete() {
@@ -181,12 +201,71 @@ public class AllTheItemsManager {
     return remainingItems.get(ThreadLocalRandom.current().nextInt(remainingItems.size()));
   }
 
+  private void _fillQueue(List<String> itemQueue, List<String> remainingItems, String avoidItem) {
+    while (itemQueue.size() < _TARGET_QUEUE_SIZE && itemQueue.size() < remainingItems.size()) {
+      List<String> candidates = remainingItems.stream()
+          .filter(item -> !itemQueue.contains(item))
+          .collect(Collectors.toList());
+
+      if (candidates.isEmpty()) {
+        return;
+      }
+
+      if (avoidItem != null) {
+        List<String> candidatesWithoutAvoided = candidates.stream()
+            .filter(item -> !avoidItem.equals(item))
+            .collect(Collectors.toList());
+
+        if (!candidatesWithoutAvoided.isEmpty()) {
+          candidates = candidatesWithoutAvoided;
+        }
+      }
+
+      itemQueue.add(_pickRandomRemainingItem(candidates));
+    }
+  }
+
+  private List<String> _getNormalizedQueue(List<String> remainingItems) {
+    List<String> storedQueue = _stateFileConfig.getStringList(_KEY_QUEUE);
+    Set<String> normalizedQueueSet = new LinkedHashSet<>();
+
+    for (String itemName : storedQueue) {
+      if (itemName == null || itemName.isBlank()) {
+        continue;
+      }
+
+      String normalizedName = itemName.trim();
+      if (!remainingItems.contains(normalizedName)) {
+        continue;
+      }
+
+      normalizedQueueSet.add(normalizedName);
+    }
+
+    List<String> itemQueue = new ArrayList<>(normalizedQueueSet);
+
+    if (itemQueue.isEmpty()) {
+      String legacyCurrent = _stateFileConfig.getString(_KEY_CURRENT);
+      if (legacyCurrent != null && !legacyCurrent.isBlank() && remainingItems.contains(legacyCurrent)) {
+        itemQueue.add(legacyCurrent);
+      }
+    }
+
+    _fillQueue(itemQueue, remainingItems, null);
+
+    return itemQueue;
+  }
+
   // --------------
   // SAVE TO CONFIG
   // --------------
 
-  private void _saveState(List<String> remainingItems, Map<String, CollectedItem> collectedItems, String currentItem) {
+  private void _saveState(List<String> remainingItems, Map<String, CollectedItem> collectedItems,
+      List<String> itemQueue) {
+    String currentItem = itemQueue.isEmpty() ? null : itemQueue.get(0);
+
     _stateFileConfig.set(_KEY_REMAINING, new ArrayList<>(remainingItems));
+    _stateFileConfig.set(_KEY_QUEUE, new ArrayList<>(itemQueue));
     _stateFileConfig.set(_KEY_CURRENT, currentItem);
     _stateFileConfig.set(_KEY_COMPLETE, remainingItems.isEmpty());
     _stateFileConfig.set(_KEY_COLLECTED, null);

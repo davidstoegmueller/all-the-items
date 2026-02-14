@@ -2,9 +2,11 @@ package com.daveestar.alltheitems.gui;
 
 import java.util.ArrayList;
 import java.util.EnumSet;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Consumer;
 
 import org.bukkit.Material;
@@ -28,12 +30,14 @@ public class CurrentItemsGUI {
   private static final String _GUI_LORE_PREFIX = ChatColor.YELLOW + "» " + ChatColor.GRAY;
 
   private static final String _KEY_CURRENT_ITEM = "currentItem";
+  private static final String _KEY_QUEUE_ITEM_PREFIX = "queueItem::";
   private static final String _KEY_REMAINING_ITEMS = "action::openRemainingItems";
   private static final String _KEY_COLLECTED_ITEMS = "action::openCollectedItems";
   private static final String _KEY_TOP_PLACEHOLDER_PREFIX = "topPlaceholder::";
 
   private static final int _GUI_ROWS = 2;
   private static final int _CURRENT_ITEM_SLOT = 4;
+  private static final int _MAX_VISIBLE_QUEUE_ITEMS = 2;
   private static final int _REMAINING_ITEMS_SLOT = (_GUI_ROWS - 1) * 9 + 0;
   private static final int _COLLECTED_ITEMS_SLOT = (_GUI_ROWS - 1) * 9 + 1;
 
@@ -51,10 +55,9 @@ public class CurrentItemsGUI {
 
   public void displayCurrentItemsGUI(Player p) {
     Map<String, ItemStack> entries = new LinkedHashMap<>();
-    entries.put(_KEY_CURRENT_ITEM, _createCurrentItemStateItem(p));
-
     Map<String, Integer> customSlots = new LinkedHashMap<>();
-    customSlots.put(_KEY_CURRENT_ITEM, _CURRENT_ITEM_SLOT);
+
+    _addCurrentAndQueueEntries(p, entries, customSlots);
     _addPlaceholders(entries, customSlots);
 
     CustomGUI currentItemsGUI = new CustomGUI(
@@ -93,12 +96,53 @@ public class CurrentItemsGUI {
     currentItemsGUI.open(p);
   }
 
+  private void _addCurrentAndQueueEntries(Player player, Map<String, ItemStack> entries,
+      Map<String, Integer> customSlots) {
+    List<String> itemQueue = _allTheItemsManager.getQueue();
+    DynamicSlots dynamicSlots = _getDynamicSlots(itemQueue);
+
+    entries.put(_KEY_CURRENT_ITEM, _createCurrentItemStateItem(player));
+    customSlots.put(_KEY_CURRENT_ITEM, dynamicSlots.currentItemSlot());
+
+    for (int queueOffset = 1; queueOffset <= _MAX_VISIBLE_QUEUE_ITEMS; queueOffset++) {
+      int queueIndex = queueOffset;
+      int queueIndexDisplay = queueIndex + 1;
+
+      if (itemQueue.size() <= queueIndex) {
+        break;
+      }
+
+      int queueSlot = dynamicSlots.firstQueueItemSlot() + (queueOffset - 1);
+      if (queueSlot >= 9) {
+        break;
+      }
+
+      String queueItemName = itemQueue.get(queueIndex);
+      String queueKey = _KEY_QUEUE_ITEM_PREFIX + queueIndex;
+
+      entries.put(queueKey, _createQueueItemStateItem(queueItemName, queueIndexDisplay));
+      customSlots.put(queueKey, queueSlot);
+    }
+  }
+
+  private DynamicSlots _getDynamicSlots(List<String> itemQueue) {
+    int availableQueueItems = Math.max(itemQueue.size() - 1, 0);
+    int visibleItemCount = 1 + Math.min(_MAX_VISIBLE_QUEUE_ITEMS, availableQueueItems);
+    int slotShift = (visibleItemCount - 1) / 2;
+
+    int currentItemSlot = _CURRENT_ITEM_SLOT - slotShift;
+    int firstQueueItemSlot = currentItemSlot + 1;
+
+    return new DynamicSlots(currentItemSlot, firstQueueItemSlot);
+  }
+
   // ------------
   // CREATE ITEMS
   // ------------
 
   private ItemStack _createCurrentItemStateItem(Player player) {
-    String currentItemName = _allTheItemsManager.getCurrentItem();
+    List<String> itemQueue = _allTheItemsManager.getQueue();
+    String currentItemName = itemQueue.isEmpty() ? null : itemQueue.get(0);
     boolean isComplete = _allTheItemsManager.isComplete();
 
     if (isComplete) {
@@ -126,7 +170,7 @@ public class CurrentItemsGUI {
 
     List<String> lore = new ArrayList<>(List.of(
         "",
-        _GUI_LORE_PREFIX + "#1 - Item to collect",
+        _GUI_LORE_PREFIX + "#1 - Current Item",
         _GUI_LORE_PREFIX + "Collect this item to progress."));
 
     if (player.hasPermission(Permissions.ADMIN.getName())) {
@@ -141,6 +185,30 @@ public class CurrentItemsGUI {
         _GUI_ITEM_PREFIX + _getTranslatedItemName(currentMaterial),
         true,
         lore);
+  }
+
+  private ItemStack _createQueueItemStateItem(String queueItemName, int queueIndex) {
+    Material queueMaterial = Material.matchMaterial(queueItemName);
+
+    if (queueMaterial == null) {
+      return _createItem(
+          Material.BARRIER,
+          _GUI_ITEM_PREFIX + "Unknown Queue Item",
+          false,
+          List.of(
+              "",
+              _GUI_LORE_PREFIX + "#" + queueIndex + " - Queue Item",
+              _GUI_LORE_PREFIX + "Something went wrong while fetching this queue item."));
+    }
+
+    return _createItem(
+        queueMaterial,
+        _GUI_ITEM_PREFIX + _getTranslatedItemName(queueMaterial),
+        false,
+        List.of(
+            "",
+            _GUI_LORE_PREFIX + "#" + queueIndex + " - Queue Item",
+            _GUI_LORE_PREFIX + "Upcoming item."));
   }
 
   private ItemStack _createOpenRemainingItemsItem() {
@@ -172,8 +240,10 @@ public class CurrentItemsGUI {
   }
 
   private void _addPlaceholders(Map<String, ItemStack> entries, Map<String, Integer> customSlots) {
+    Set<Integer> reservedSlots = new HashSet<>(customSlots.values());
+
     for (int slot = 0; slot < 9; slot++) {
-      if (slot == _CURRENT_ITEM_SLOT) {
+      if (reservedSlots.contains(slot)) {
         continue;
       }
 
@@ -260,7 +330,7 @@ public class CurrentItemsGUI {
       Material nextMaterial = nextItem == null ? null : Material.matchMaterial(nextItem);
       String nextName = nextMaterial == null ? nextItem : _getTranslatedItemName(nextMaterial);
 
-      p.sendMessage(Main.getPrefix() + ChatColor.GRAY + "Skipped current item " + ChatColor.YELLOW + currentItemName
+      p.sendMessage(Main.getPrefix() + ChatColor.GRAY + "Collected current item " + ChatColor.YELLOW + currentItemName
           + ChatColor.GRAY + ".");
       p.sendMessage(Main.getPrefix() + ChatColor.GRAY + "Next item is now " + ChatColor.YELLOW + nextName
           + ChatColor.GRAY + ".");
@@ -304,5 +374,8 @@ public class CurrentItemsGUI {
         }
       }
     };
+  }
+
+  private record DynamicSlots(int currentItemSlot, int firstQueueItemSlot) {
   }
 }
