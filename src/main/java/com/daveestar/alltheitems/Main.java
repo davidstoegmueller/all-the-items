@@ -68,7 +68,7 @@ public class Main extends JavaPlugin {
   // -------------------------
 
   public static String getPrefix() {
-    return ChatColor.GRAY + "[" + ChatColor.YELLOW + "All the Items" + ChatColor.GRAY + "] ";
+    return ChatColor.GRAY + "[" + ChatColor.YELLOW + "ATI" + ChatColor.GRAY + "] ";
   }
 
   public static String getNoPlayerMessage() {

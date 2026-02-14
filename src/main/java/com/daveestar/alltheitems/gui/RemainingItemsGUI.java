@@ -42,7 +42,7 @@ public class RemainingItemsGUI {
     CustomGUI remainingItemsGUI = new CustomGUI(
         _plugin,
         p,
-        _GUI_TITLE_PREFIX + "Remaining Items",
+        Main.getPrefix() + _GUI_TITLE_PREFIX + "Remaining Items",
         entries,
         _GUI_ROWS,
         null,
@@ -89,7 +89,7 @@ public class RemainingItemsGUI {
         _GUI_ITEM_PREFIX + _getTranslatedItemName(material),
         List.of(
             "",
-            _GUI_LORE_PREFIX + "Still needs to be collected."));
+            _GUI_LORE_PREFIX + ChatColor.RED + "NOT COLLECTED"));
   }
 
   private String _getTranslatedItemName(Material material) {
@@ -114,5 +114,4 @@ public class RemainingItemsGUI {
 
     return item;
   }
-
 }

@@ -52,7 +52,7 @@ public class CollectedItemsGUI {
     CustomGUI collectedItemsGUI = new CustomGUI(
         _plugin,
         p,
-        _GUI_TITLE_PREFIX + "Collected Items",
+        Main.getPrefix() + _GUI_TITLE_PREFIX + "Collected Items",
         entries,
         _GUI_ROWS,
         null,
@@ -111,7 +111,7 @@ public class CollectedItemsGUI {
             "",
             _GUI_LORE_PREFIX + "Collected At: " + ChatColor.YELLOW + _formatTimestamp(collectedTimestamp),
             "",
-            _GUI_LORE_PREFIX + "Already collected."));
+            _GUI_LORE_PREFIX + ChatColor.GREEN + "COLLECTED"));
   }
 
   private String _getTranslatedItemName(Material material) {
@@ -144,5 +144,4 @@ public class CollectedItemsGUI {
 
     return item;
   }
-
 }

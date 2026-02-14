@@ -1,5 +1,6 @@
 package com.daveestar.alltheitems.gui;
 
+import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -13,6 +14,7 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 
 import com.daveestar.alltheitems.Main;
+import com.daveestar.alltheitems.enums.Permissions;
 import com.daveestar.alltheitems.manager.AllTheItemsManager;
 import com.daveestar.alltheitems.utils.CustomGUI;
 
@@ -31,8 +33,8 @@ public class CurrentItemsGUI {
 
   private static final int _GUI_ROWS = 2;
   private static final int _CURRENT_ITEM_SLOT = 4;
-  private static final int _REMAINING_ITEMS_SLOT = 13;
-  private static final int _COLLECTED_ITEMS_SLOT = 14;
+  private static final int _REMAINING_ITEMS_SLOT = (_GUI_ROWS - 1) * 9 + 0;
+  private static final int _COLLECTED_ITEMS_SLOT = (_GUI_ROWS - 1) * 9 + 1;
 
   private final Main _plugin;
   private final AllTheItemsManager _allTheItemsManager;
@@ -48,7 +50,7 @@ public class CurrentItemsGUI {
 
   public void displayCurrentItemsGUI(Player p) {
     Map<String, ItemStack> entries = new LinkedHashMap<>();
-    entries.put(_KEY_CURRENT_ITEM, _createCurrentItemStateItem());
+    entries.put(_KEY_CURRENT_ITEM, _createCurrentItemStateItem(p));
 
     Map<String, Integer> customSlots = new LinkedHashMap<>();
     customSlots.put(_KEY_CURRENT_ITEM, _CURRENT_ITEM_SLOT);
@@ -56,7 +58,7 @@ public class CurrentItemsGUI {
     CustomGUI currentItemsGUI = new CustomGUI(
         _plugin,
         p,
-        _GUI_TITLE_PREFIX + "Current Items",
+        Main.getPrefix() + _GUI_TITLE_PREFIX + "Current Items",
         entries,
         _GUI_ROWS,
         customSlots,
@@ -64,13 +66,11 @@ public class CurrentItemsGUI {
         EnumSet.of(CustomGUI.Option.DISABLE_PAGE_BUTTON));
 
     Map<String, CustomGUI.ClickAction> actions = new LinkedHashMap<>();
-    if (_allTheItemsManager.isDevMode()) {
-      actions.put(_KEY_CURRENT_ITEM, _clickAction(
-          player -> _handleDevAdvanceCurrentItem(player),
-          null,
-          null,
-          null));
-    }
+    actions.put(_KEY_CURRENT_ITEM, _clickAction(
+        null,
+        null,
+        player -> _handleSkipItem(player),
+        player -> _handleNextItem(player)));
 
     actions.put(_KEY_REMAINING_ITEMS, _clickAction(
         player -> _remainingItemsGUI.displayRemainingItemsGUI(player, currentItemsGUI),
@@ -91,7 +91,11 @@ public class CurrentItemsGUI {
     currentItemsGUI.open(p);
   }
 
-  private ItemStack _createCurrentItemStateItem() {
+  // ------------
+  // CREATE ITEMS
+  // ------------
+
+  private ItemStack _createCurrentItemStateItem(Player player) {
     String currentItemName = _allTheItemsManager.getCurrentItem();
     boolean isComplete = _allTheItemsManager.isComplete();
 
@@ -99,9 +103,10 @@ public class CurrentItemsGUI {
       return _createItem(
           Material.NETHER_STAR,
           _GUI_ITEM_PREFIX + "Completed",
-          List.of(
+          true, List.of(
               "",
               _GUI_LORE_PREFIX + "Congratulations!",
+              "",
               _GUI_LORE_PREFIX + "All items have been collected."));
     }
 
@@ -111,47 +116,36 @@ public class CurrentItemsGUI {
       return _createItem(
           Material.BARRIER,
           _GUI_ITEM_PREFIX + "Unknown Item",
+          true,
           List.of(
               "",
               _GUI_LORE_PREFIX + "Something went wrong while fetching the current item."));
     }
 
+    List<String> lore = new ArrayList<>(List.of(
+        "",
+        _GUI_LORE_PREFIX + "#1 - Item to collect",
+        _GUI_LORE_PREFIX + "Collect this item to progress."));
+
+    if (player.hasPermission(Permissions.ADMIN.getName())) {
+      lore.add("");
+      lore.add(_GUI_LORE_PREFIX + "Shift + Left-Click: Skip for later");
+      lore.add(_GUI_LORE_PREFIX + "Shift + Right-Click: Collect & Next Item");
+
+    }
+
     return _createItem(
         currentMaterial,
         _GUI_ITEM_PREFIX + _getTranslatedItemName(currentMaterial),
-        List.of(
-            "",
-            _GUI_LORE_PREFIX + "#1",
-            _GUI_LORE_PREFIX + "Collect this item to progress."));
-  }
-
-  private String _getTranslatedItemName(Material material) {
-    String translatedItemKey = material.getItemTranslationKey();
-    Component itemNameComponent = Component.translatable(translatedItemKey);
-
-    return PlainTextComponentSerializer.plainText().serialize(itemNameComponent);
-  }
-
-  private ItemStack _createItem(Material material, String displayName, List<String> lore) {
-    ItemStack item = new ItemStack(material);
-    ItemMeta meta = item.getItemMeta();
-
-    if (meta == null) {
-      return item;
-    }
-
-    meta.displayName(Component.text(displayName));
-    meta.lore(lore.stream().map(Component::text).toList());
-    meta.addItemFlags(ItemFlag.HIDE_ATTRIBUTES);
-    item.setItemMeta(meta);
-
-    return item;
+        true,
+        lore);
   }
 
   private ItemStack _createOpenRemainingItemsItem() {
     return _createItem(
         Material.CHEST,
         _GUI_ITEM_PREFIX + "Remaining Items",
+        false,
         List.of(
             "",
             _GUI_LORE_PREFIX + "Open all remaining items.",
@@ -163,6 +157,7 @@ public class CurrentItemsGUI {
     return _createItem(
         Material.ENDER_CHEST,
         _GUI_ITEM_PREFIX + "Collected Items",
+        false,
         List.of(
             "",
             _GUI_LORE_PREFIX + "Open all collected items.",
@@ -170,24 +165,91 @@ public class CurrentItemsGUI {
             _GUI_LORE_PREFIX + "Left-Click: Open"));
   }
 
-  private void _handleDevAdvanceCurrentItem(Player p) {
-    if (!_allTheItemsManager.isDevMode()) {
+  // -----------
+  // ITEM HELPER
+  // -----------
+
+  private ItemStack _createItem(Material material, String displayName, boolean setEnchanted, List<String> lore) {
+    ItemStack item = new ItemStack(material);
+    ItemMeta meta = item.getItemMeta();
+
+    if (meta == null) {
+      return item;
+    }
+
+    meta.displayName(Component.text(displayName));
+    meta.lore(lore.stream().map(Component::text).toList());
+    meta.addItemFlags(ItemFlag.HIDE_ATTRIBUTES);
+    meta.setEnchantmentGlintOverride(setEnchanted);
+    item.setItemMeta(meta);
+
+    return item;
+  }
+
+  private String _getTranslatedItemName(Material material) {
+    String translatedItemKey = material.getItemTranslationKey();
+    Component itemNameComponent = Component.translatable(translatedItemKey);
+
+    return PlainTextComponentSerializer.plainText().serialize(itemNameComponent);
+  }
+
+  // --------------------
+  // CLICK ACTION HANDLER
+  // --------------------
+
+  private void _handleSkipItem(Player p) {
+    if (!p.hasPermission(Permissions.ADMIN.getName())) {
       return;
     }
 
-    String nextItem = _allTheItemsManager.setRandomNextItem();
+    String currentItem = _allTheItemsManager.getCurrentItem();
+    Material currentMaterial = currentItem == null ? null : Material.matchMaterial(currentItem);
+    String currentItemName = currentMaterial == null ? currentItem : _getTranslatedItemName(currentMaterial);
+
+    String nextItem = _allTheItemsManager.skipItem();
     if (nextItem == null) {
-      p.sendMessage(Main.getPrefix() + ChatColor.GREEN + "All items are now completed.");
+      p.sendMessage(Main.getPrefix() + ChatColor.GREEN + "All items are completed.");
     } else {
-      Material nextMaterial = Material.matchMaterial(nextItem);
+      Material nextMaterial = nextItem == null ? null : Material.matchMaterial(nextItem);
       String nextName = nextMaterial == null ? nextItem : _getTranslatedItemName(nextMaterial);
 
+      p.sendMessage(Main.getPrefix() + ChatColor.GRAY + "Skipped current item " + ChatColor.YELLOW + currentItemName
+          + ChatColor.GRAY + ".");
       p.sendMessage(Main.getPrefix() + ChatColor.GRAY + "Next item is now " + ChatColor.YELLOW + nextName
           + ChatColor.GRAY + ".");
     }
 
     displayCurrentItemsGUI(p);
   }
+
+  private void _handleNextItem(Player p) {
+    if (!p.hasPermission(Permissions.ADMIN.getName())) {
+      return;
+    }
+
+    String currentItem = _allTheItemsManager.getCurrentItem();
+    Material currentMaterial = currentItem == null ? null : Material.matchMaterial(currentItem);
+    String currentItemName = currentMaterial == null ? currentItem : _getTranslatedItemName(currentMaterial);
+
+    String nextItem = _allTheItemsManager.nextItem();
+    if (nextItem == null) {
+      p.sendMessage(Main.getPrefix() + ChatColor.GREEN + "All items are completed.");
+    } else {
+      Material nextMaterial = nextItem == null ? null : Material.matchMaterial(nextItem);
+      String nextName = nextMaterial == null ? nextItem : _getTranslatedItemName(nextMaterial);
+
+      p.sendMessage(Main.getPrefix() + ChatColor.GRAY + "Skipped current item " + ChatColor.YELLOW + currentItemName
+          + ChatColor.GRAY + ".");
+      p.sendMessage(Main.getPrefix() + ChatColor.GRAY + "Next item is now " + ChatColor.YELLOW + nextName
+          + ChatColor.GRAY + ".");
+    }
+
+    displayCurrentItemsGUI(p);
+  }
+
+  // -------------------
+  // CLICK ACTION HELPER
+  // -------------------
 
   private CustomGUI.ClickAction _clickAction(Consumer<Player> onLeft, Consumer<Player> onRight,
       Consumer<Player> onShiftLeft, Consumer<Player> onShiftRight) {

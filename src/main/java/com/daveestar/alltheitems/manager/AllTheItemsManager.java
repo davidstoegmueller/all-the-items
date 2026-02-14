@@ -76,7 +76,7 @@ public class AllTheItemsManager {
     _saveState(remainingItems, collectedItems, currentItem);
   }
 
-  public String setRandomNextItem() {
+  public String nextItem() {
     if (isComplete()) {
       return null;
     }
@@ -109,6 +109,20 @@ public class AllTheItemsManager {
 
     String nextItem = _pickRandomRemainingItem(remainingItems);
 
+    _saveState(remainingItems, collectedItems, nextItem);
+
+    return nextItem;
+  }
+
+  public String skipItem() {
+    if (isComplete()) {
+      return null;
+    }
+
+    List<String> remainingItems = getRemainingItems();
+    Map<String, CollectedItem> collectedItems = getCollectedItems();
+
+    String nextItem = _pickRandomRemainingItem(remainingItems);
     _saveState(remainingItems, collectedItems, nextItem);
 
     return nextItem;
@@ -193,13 +207,9 @@ public class AllTheItemsManager {
         .stream()
         .map(String::trim)
         .filter(value -> !value.isEmpty())
-        .map(this::_parseMaterialOrNull)
+        .map(materialName -> Material.matchMaterial(materialName))
         .filter(material -> material != null)
         .collect(Collectors.toSet());
-  }
-
-  private Material _parseMaterialOrNull(String materialName) {
-    return Material.matchMaterial(materialName);
   }
 
   private List<Material> _getAllItems() {
