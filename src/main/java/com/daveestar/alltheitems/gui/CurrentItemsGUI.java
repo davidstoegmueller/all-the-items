@@ -33,6 +33,7 @@ public class CurrentItemsGUI {
   private static final String _KEY_QUEUE_ITEM_PREFIX = "queueItem::";
   private static final String _KEY_REMAINING_ITEMS = "action::openRemainingItems";
   private static final String _KEY_COLLECTED_ITEMS = "action::openCollectedItems";
+  private static final String _KEY_INFO_ITEM = "action::info";
   private static final String _KEY_TOP_PLACEHOLDER_PREFIX = "topPlaceholder::";
 
   private static final int _GUI_ROWS = 2;
@@ -40,6 +41,7 @@ public class CurrentItemsGUI {
   private static final int _MAX_VISIBLE_QUEUE_ITEMS = 2;
   private static final int _REMAINING_ITEMS_SLOT = (_GUI_ROWS - 1) * 9 + 0;
   private static final int _COLLECTED_ITEMS_SLOT = (_GUI_ROWS - 1) * 9 + 1;
+  private static final int _INFO_ITEM_SLOT = (_GUI_ROWS - 1) * 9 + 8;
 
   private final Main _plugin;
   private final AllTheItemsManager _allTheItemsManager;
@@ -91,6 +93,7 @@ public class CurrentItemsGUI {
 
     currentItemsGUI.addFooterEntry(_KEY_REMAINING_ITEMS, _createOpenRemainingItemsItem(), _REMAINING_ITEMS_SLOT);
     currentItemsGUI.addFooterEntry(_KEY_COLLECTED_ITEMS, _createOpenCollectedItemsItem(), _COLLECTED_ITEMS_SLOT);
+    currentItemsGUI.addFooterEntry(_KEY_INFO_ITEM, _createInfoItem(), _INFO_ITEM_SLOT);
     currentItemsGUI.setClickActions(actions);
 
     currentItemsGUI.open(p);
@@ -233,6 +236,36 @@ public class CurrentItemsGUI {
             _GUI_LORE_PREFIX + "Open all collected items.",
             "",
             _GUI_LORE_PREFIX + "Left-Click: Open"));
+  }
+
+  private ItemStack _createInfoItem() {
+    int totalItemsAmount = _allTheItemsManager.getTotalItemsAmount();
+    int remainingItemsAmount = _allTheItemsManager.getRemainingItemsAmount();
+    int collectedItemsAmount = _allTheItemsManager.getCollectedItemsAmount();
+
+    String currentItem = _allTheItemsManager.getCurrentItem();
+    Material currentMaterial = currentItem == null ? null : Material.matchMaterial(currentItem);
+    String currentItemName = _allTheItemsManager.isComplete()
+        ? "Completed"
+        : currentMaterial == null ? "None" : _getTranslatedItemName(currentMaterial);
+
+    return _createItem(
+        Material.BOOK,
+        _GUI_ITEM_PREFIX + "Info",
+        false,
+        List.of(
+            "",
+            _GUI_LORE_PREFIX + "Goal: Collect every item once.",
+            _GUI_LORE_PREFIX + "Collect the current item to progress.",
+            _GUI_LORE_PREFIX
+                + "The current item will automatically be marked as collected once you obtain it in your inventory.",
+            _GUI_LORE_PREFIX + "The queue shows your next items.",
+            "",
+            _GUI_LORE_PREFIX + "Progress Overview",
+            _GUI_LORE_PREFIX + "Total Items: " + ChatColor.YELLOW + totalItemsAmount,
+            _GUI_LORE_PREFIX + "Items Remaining: " + ChatColor.YELLOW + remainingItemsAmount,
+            _GUI_LORE_PREFIX + "Items Collected: " + ChatColor.YELLOW + collectedItemsAmount,
+            _GUI_LORE_PREFIX + "Current Item: " + ChatColor.YELLOW + currentItemName));
   }
 
   private ItemStack _createPlaceholderItem() {

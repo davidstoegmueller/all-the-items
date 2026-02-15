@@ -193,6 +193,18 @@ public class AllTheItemsManager {
     return _DEV_MODE;
   }
 
+  public int getTotalItemsAmount() {
+    return getRemainingItemsAmount() + getCollectedItemsAmount();
+  }
+
+  public int getRemainingItemsAmount() {
+    return getRemainingItems().size();
+  }
+
+  public int getCollectedItemsAmount() {
+    return getCollectedItems().size();
+  }
+
   // ----------------
   // PICK RANDOM ITEM
   // ----------------
