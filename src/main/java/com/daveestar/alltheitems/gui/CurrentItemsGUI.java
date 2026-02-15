@@ -257,11 +257,10 @@ public class CurrentItemsGUI {
             "",
             _GUI_LORE_PREFIX + "Goal: Collect every item once.",
             _GUI_LORE_PREFIX + "Collect the current item to progress.",
-            _GUI_LORE_PREFIX
-                + "The current item will automatically be marked as collected once you obtain it in your inventory.",
+            _GUI_LORE_PREFIX + "Auto-marks item as collected when obtained.",
             _GUI_LORE_PREFIX + "The queue shows your next items.",
             "",
-            _GUI_LORE_PREFIX + "Progress Overview",
+            ChatColor.GRAY + "Progress Overview:",
             _GUI_LORE_PREFIX + "Total Items: " + ChatColor.YELLOW + totalItemsAmount,
             _GUI_LORE_PREFIX + "Items Remaining: " + ChatColor.YELLOW + remainingItemsAmount,
             _GUI_LORE_PREFIX + "Items Collected: " + ChatColor.YELLOW + collectedItemsAmount,
