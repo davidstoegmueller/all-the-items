@@ -5,6 +5,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemFlag;
@@ -13,6 +14,7 @@ import org.bukkit.inventory.meta.ItemMeta;
 
 import com.daveestar.alltheitems.Main;
 import com.daveestar.alltheitems.manager.AllTheItemsManager;
+import com.daveestar.alltheitems.utils.CompletionFireworkShow;
 import com.daveestar.alltheitems.utils.CustomGUI;
 
 import net.kyori.adventure.text.Component;
@@ -25,9 +27,11 @@ public class SettingsGUI {
 
   private static final String _KEY_TOGGLE_GAMEMODE = "action::toggle";
   private static final String _KEY_RESET_GAMEMODE = "action::reset";
+  private static final String _KEY_MANUAL_FIREWORK_SHOW = "action::manualFireworkShow";
 
   private static final int _GUI_ROWS = 2;
   private static final int _TOGGLE_SLOT = 3;
+  private static final int _MANUAL_FIREWORK_SHOW_SLOT = 4;
   private static final int _RESET_SLOT = 5;
 
   private final Main _plugin;
@@ -42,8 +46,10 @@ public class SettingsGUI {
     Map<String, ItemStack> entries = new LinkedHashMap<>();
     Map<String, Integer> customSlots = new LinkedHashMap<>();
     entries.put(_KEY_TOGGLE_GAMEMODE, _createToggleGamemodeItem());
+    entries.put(_KEY_MANUAL_FIREWORK_SHOW, _createManualFireworkShowItem());
     entries.put(_KEY_RESET_GAMEMODE, _createResetGamemodeItem());
     customSlots.put(_KEY_TOGGLE_GAMEMODE, _TOGGLE_SLOT);
+    customSlots.put(_KEY_MANUAL_FIREWORK_SHOW, _MANUAL_FIREWORK_SHOW_SLOT);
     customSlots.put(_KEY_RESET_GAMEMODE, _RESET_SLOT);
 
     CustomGUI settingsGUI = new CustomGUI(
@@ -68,6 +74,13 @@ public class SettingsGUI {
       @Override
       public void onLeftClick(Player player) {
         _handleResetGamemode(player);
+      }
+    });
+
+    actions.put(_KEY_MANUAL_FIREWORK_SHOW, new CustomGUI.ClickAction() {
+      @Override
+      public void onLeftClick(Player player) {
+        _handleManualFireworkShow(player);
       }
     });
 
@@ -105,6 +118,14 @@ public class SettingsGUI {
     new CurrentItemsGUI().displayCurrentItemsGUI(p);
   }
 
+  private void _handleManualFireworkShow(Player p) {
+    for (Player onlinePlayer : Bukkit.getOnlinePlayers()) {
+      CompletionFireworkShow.play(_plugin, onlinePlayer);
+    }
+
+    p.closeInventory();
+  }
+
   private ItemStack _createToggleGamemodeItem() {
     boolean isEnabled = _allTheItemsManager.isGamemodeEnabled();
 
@@ -133,6 +154,18 @@ public class SettingsGUI {
             _GUI_LORE_PREFIX + "The gamemode will be restarted and all progress will be lost.",
             "",
             _GUI_LORE_PREFIX + "Left-Click: Reset game mode"));
+  }
+
+  private ItemStack _createManualFireworkShowItem() {
+    return _createItem(
+        Material.FIREWORK_ROCKET,
+        _GUI_ITEM_PREFIX + "Manual Firework Show",
+        true,
+        List.of(
+            "",
+            _GUI_LORE_PREFIX + "Because its just an awesome show.",
+            "",
+            _GUI_LORE_PREFIX + "Left-Click: Start firework show"));
   }
 
   private ItemStack _createItem(Material material, String displayName, boolean setEnchanted, List<String> lore) {

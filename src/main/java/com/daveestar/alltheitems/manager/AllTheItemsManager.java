@@ -22,6 +22,7 @@ import org.bukkit.entity.Player;
 
 import com.daveestar.alltheitems.Main;
 import com.daveestar.alltheitems.utils.Config;
+import com.daveestar.alltheitems.utils.CompletionFireworkShow;
 
 import net.md_5.bungee.api.ChatColor;
 
@@ -424,6 +425,8 @@ public class AllTheItemsManager {
     _spawnParticles(player, Particle.HAPPY_VILLAGER, 24, 0.75, 1.0, 0.75, 0.08);
     _spawnParticles(player, Particle.FLAME, 20, 0.55, 0.95, 0.55, 0.01);
     _spawnParticles(player, Particle.PORTAL, 26, 0.75, 1.05, 0.75, 0.3);
+
+    CompletionFireworkShow.play(Main.getInstance(), player);
 
     Bukkit.getScheduler().runTaskLater(Main.getInstance(), () -> {
       if (!player.isOnline()) {
