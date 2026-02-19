@@ -375,15 +375,13 @@ public class CurrentItemsGUI {
 
     String nextItem = _allTheItemsManager.skipItem();
     if (nextItem == null) {
-      p.sendMessage(Main.getPrefix() + ChatColor.GREEN + "All items are completed.");
+      _allTheItemsManager.broadcastAllItemsCompleted();
     } else {
       Material nextMaterial = nextItem == null ? null : Material.matchMaterial(nextItem);
       String nextName = nextMaterial == null ? nextItem : _getTranslatedItemName(nextMaterial);
 
-      p.sendMessage(Main.getPrefix() + ChatColor.GRAY + "Skipped current item " + ChatColor.YELLOW + currentItemName
-          + ChatColor.GRAY + ".");
-      p.sendMessage(Main.getPrefix() + ChatColor.GRAY + "Next item is now " + ChatColor.YELLOW + nextName
-          + ChatColor.GRAY + ".");
+      _allTheItemsManager.broadcastCurrentItemSkipped(currentItemName);
+      _allTheItemsManager.broadcastNewItem(nextName);
     }
 
     displayCurrentItemsGUI(p);
@@ -404,15 +402,13 @@ public class CurrentItemsGUI {
 
     String nextItem = _allTheItemsManager.nextItem();
     if (nextItem == null) {
-      p.sendMessage(Main.getPrefix() + ChatColor.GREEN + "All items are completed.");
+      _allTheItemsManager.broadcastAllItemsCompleted();
     } else {
       Material nextMaterial = nextItem == null ? null : Material.matchMaterial(nextItem);
       String nextName = nextMaterial == null ? nextItem : _getTranslatedItemName(nextMaterial);
 
-      p.sendMessage(Main.getPrefix() + ChatColor.GRAY + "Collected current item " + ChatColor.YELLOW + currentItemName
-          + ChatColor.GRAY + ".");
-      p.sendMessage(Main.getPrefix() + ChatColor.GRAY + "Next item is now " + ChatColor.YELLOW + nextName
-          + ChatColor.GRAY + ".");
+      _allTheItemsManager.broadcastCurrentItemCollected(currentItemName);
+      _allTheItemsManager.broadcastNewItem(nextName);
     }
 
     displayCurrentItemsGUI(p);

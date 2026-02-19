@@ -12,11 +12,16 @@ import java.util.Map.Entry;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Collectors;
 
+import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.FileConfiguration;
+import org.bukkit.entity.Player;
 
+import com.daveestar.alltheitems.Main;
 import com.daveestar.alltheitems.utils.Config;
+
+import net.md_5.bungee.api.ChatColor;
 
 public class AllTheItemsManager {
   private static final String _KEY_REMAINING = "remaining";
@@ -234,6 +239,26 @@ public class AllTheItemsManager {
   }
 
   // ----------------
+  // PLAYER MESSAGES
+  // ----------------
+
+  public void broadcastCurrentItemCollected(String itemName) {
+    _broadcast(ChatColor.GRAY + "Current item " + ChatColor.YELLOW + itemName + ChatColor.GRAY + " was collected.");
+  }
+
+  public void broadcastCurrentItemSkipped(String itemName) {
+    _broadcast(ChatColor.GRAY + "Current item " + ChatColor.YELLOW + itemName + ChatColor.GRAY + " was skipped.");
+  }
+
+  public void broadcastNewItem(String itemName) {
+    _broadcast(ChatColor.GRAY + "New item is " + ChatColor.YELLOW + itemName + ChatColor.GRAY + ".");
+  }
+
+  public void broadcastAllItemsCompleted() {
+    _broadcast(ChatColor.GREEN + "All items have been collected.");
+  }
+
+  // ----------------
   // PICK RANDOM ITEM
   // ----------------
 
@@ -343,6 +368,14 @@ public class AllTheItemsManager {
         .collect(Collectors.toList());
 
     return materials;
+  }
+
+  private void _broadcast(String message) {
+    String prefixedMessage = Main.getPrefix() + message;
+
+    for (Player player : Bukkit.getOnlinePlayers()) {
+      player.sendMessage(prefixedMessage);
+    }
   }
 
   // -----

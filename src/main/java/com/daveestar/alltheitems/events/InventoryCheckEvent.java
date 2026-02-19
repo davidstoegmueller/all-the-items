@@ -16,7 +16,6 @@ import com.daveestar.alltheitems.manager.AllTheItemsManager;
 
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
-import net.md_5.bungee.api.ChatColor;
 
 public class InventoryCheckEvent implements Listener {
   private static final int _MAX_AUTO_COLLECTIONS_PER_CHECK = 256;
@@ -97,11 +96,10 @@ public class InventoryCheckEvent implements Listener {
       String collectedItemDisplayName = _getTranslatedItemName(currentMaterial);
       _allTheItemsManager.nextItem();
 
-      player.sendMessage(Main.getPrefix() + ChatColor.GRAY + "Current item " + ChatColor.YELLOW
-          + collectedItemDisplayName + ChatColor.GRAY + " was collected.");
+      _allTheItemsManager.broadcastCurrentItemCollected(collectedItemDisplayName);
 
       if (_allTheItemsManager.isComplete()) {
-        player.sendMessage(Main.getPrefix() + ChatColor.GREEN + "All items have been collected.");
+        _allTheItemsManager.broadcastAllItemsCompleted();
         break;
       }
 
@@ -109,8 +107,7 @@ public class InventoryCheckEvent implements Listener {
       Material nextMaterial = nextItem == null ? null : Material.matchMaterial(nextItem);
       String nextItemDisplayName = nextMaterial == null ? nextItem : _getTranslatedItemName(nextMaterial);
 
-      player.sendMessage(Main.getPrefix() + ChatColor.GRAY + "New item is " + ChatColor.YELLOW
-          + nextItemDisplayName + ChatColor.GRAY + ".");
+      _allTheItemsManager.broadcastNewItem(nextItemDisplayName);
     }
   }
 
