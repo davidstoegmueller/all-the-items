@@ -29,6 +29,7 @@ public class AllTheItemsManager {
   private static final int _TARGET_QUEUE_SIZE = 3;
 
   private static final String _KEY_EXCLUDED_ITEMS = "items.excluded";
+  private static final String _KEY_GAMEMODE_ENABLED = "gamemode.enabled";
 
   private static final boolean _DEV_MODE = true;
   private static final List<Material> _DEV_MODE_ITEMS = Arrays.asList(
@@ -44,17 +45,23 @@ public class AllTheItemsManager {
       Material.GLASS);
 
   private final Config _stateConfig;
+  private final Config _settingsConfig;
   private final FileConfiguration _stateFileConfig;
   private final FileConfiguration _settingsFileConfig;
 
   public AllTheItemsManager(Config stateConfig, Config settingsConfig) {
     this._stateConfig = stateConfig;
+    this._settingsConfig = settingsConfig;
 
     this._stateFileConfig = stateConfig.getFileConfig();
     this._settingsFileConfig = settingsConfig.getFileConfig();
   }
 
   public void initGamemode() {
+    if (!isGamemodeEnabled()) {
+      return;
+    }
+
     if (isComplete()) {
       return;
     }
@@ -68,6 +75,10 @@ public class AllTheItemsManager {
   }
 
   public void resetGamemode() {
+    if (!isGamemodeEnabled()) {
+      return;
+    }
+
     List<Material> allItems = _getAllItems();
     List<String> allItemNames = allItems.stream()
         .map(Material::name)
@@ -82,6 +93,10 @@ public class AllTheItemsManager {
   }
 
   public String nextItem() {
+    if (!isGamemodeEnabled()) {
+      return null;
+    }
+
     if (isComplete()) {
       return null;
     }
@@ -115,6 +130,10 @@ public class AllTheItemsManager {
   }
 
   public String skipItem() {
+    if (!isGamemodeEnabled()) {
+      return null;
+    }
+
     if (isComplete()) {
       return null;
     }
@@ -187,6 +206,15 @@ public class AllTheItemsManager {
 
   public boolean isComplete() {
     return _stateFileConfig.getBoolean(_KEY_COMPLETE, false);
+  }
+
+  public boolean isGamemodeEnabled() {
+    return _settingsFileConfig.getBoolean(_KEY_GAMEMODE_ENABLED, true);
+  }
+
+  public void setGamemodeEnabled(boolean enabled) {
+    _settingsFileConfig.set(_KEY_GAMEMODE_ENABLED, enabled);
+    _settingsConfig.save();
   }
 
   public boolean isDevMode() {

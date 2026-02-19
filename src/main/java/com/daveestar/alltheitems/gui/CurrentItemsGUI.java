@@ -33,6 +33,7 @@ public class CurrentItemsGUI {
   private static final String _KEY_QUEUE_ITEM_PREFIX = "queueItem::";
   private static final String _KEY_REMAINING_ITEMS = "action::openRemainingItems";
   private static final String _KEY_COLLECTED_ITEMS = "action::openCollectedItems";
+  private static final String _KEY_SETTINGS_ITEM = "action::openSettings";
   private static final String _KEY_INFO_ITEM = "action::info";
   private static final String _KEY_TOP_PLACEHOLDER_PREFIX = "topPlaceholder::";
 
@@ -41,18 +42,21 @@ public class CurrentItemsGUI {
   private static final int _MAX_VISIBLE_QUEUE_ITEMS = 2;
   private static final int _REMAINING_ITEMS_SLOT = (_GUI_ROWS - 1) * 9 + 0;
   private static final int _COLLECTED_ITEMS_SLOT = (_GUI_ROWS - 1) * 9 + 1;
+  private static final int _SETTINGS_ITEM_SLOT = (_GUI_ROWS - 1) * 9 + 7;
   private static final int _INFO_ITEM_SLOT = (_GUI_ROWS - 1) * 9 + 8;
 
   private final Main _plugin;
   private final AllTheItemsManager _allTheItemsManager;
   private final RemainingItemsGUI _remainingItemsGUI;
   private final CollectedItemsGUI _collectedItemsGUI;
+  private final SettingsGUI _settingsGUI;
 
   public CurrentItemsGUI() {
     _plugin = Main.getInstance();
     _allTheItemsManager = _plugin.getAllTheItemsManager();
     _remainingItemsGUI = new RemainingItemsGUI();
     _collectedItemsGUI = new CollectedItemsGUI();
+    _settingsGUI = new SettingsGUI();
   }
 
   public void displayCurrentItemsGUI(Player p) {
@@ -80,19 +84,42 @@ public class CurrentItemsGUI {
         player -> _handleNextItem(player)));
 
     actions.put(_KEY_REMAINING_ITEMS, _clickAction(
-        player -> _remainingItemsGUI.displayRemainingItemsGUI(player, currentItemsGUI),
+        player -> {
+          if (_isGamemodeDisabled(player)) {
+            return;
+          }
+
+          _remainingItemsGUI.displayRemainingItemsGUI(player, currentItemsGUI);
+        },
         null,
         null,
         null));
 
     actions.put(_KEY_COLLECTED_ITEMS, _clickAction(
-        player -> _collectedItemsGUI.displayCollectedItemsGUI(player, currentItemsGUI),
+        player -> {
+          if (_isGamemodeDisabled(player)) {
+            return;
+          }
+
+          _collectedItemsGUI.displayCollectedItemsGUI(player, currentItemsGUI);
+        },
         null,
         null,
         null));
 
+    if (p.hasPermission(Permissions.ADMIN.getName())) {
+      actions.put(_KEY_SETTINGS_ITEM, _clickAction(
+          player -> _settingsGUI.displaySettingsGUI(player, currentItemsGUI),
+          null,
+          null,
+          null));
+    }
+
     currentItemsGUI.addFooterEntry(_KEY_REMAINING_ITEMS, _createOpenRemainingItemsItem(), _REMAINING_ITEMS_SLOT);
     currentItemsGUI.addFooterEntry(_KEY_COLLECTED_ITEMS, _createOpenCollectedItemsItem(), _COLLECTED_ITEMS_SLOT);
+    if (p.hasPermission(Permissions.ADMIN.getName())) {
+      currentItemsGUI.addFooterEntry(_KEY_SETTINGS_ITEM, _createOpenSettingsItem(), _SETTINGS_ITEM_SLOT);
+    }
     currentItemsGUI.addFooterEntry(_KEY_INFO_ITEM, _createInfoItem(), _INFO_ITEM_SLOT);
     currentItemsGUI.setClickActions(actions);
 
@@ -267,6 +294,18 @@ public class CurrentItemsGUI {
             _GUI_LORE_PREFIX + "Current Item: " + ChatColor.YELLOW + currentItemName));
   }
 
+  private ItemStack _createOpenSettingsItem() {
+    return _createItem(
+        Material.COMPARATOR,
+        _GUI_ITEM_PREFIX + "Settings",
+        false,
+        List.of(
+            "",
+            _GUI_LORE_PREFIX + "Open game mode settings.",
+            "",
+            _GUI_LORE_PREFIX + "Left-Click: Open"));
+  }
+
   private ItemStack _createPlaceholderItem() {
     return _createItem(Material.YELLOW_STAINED_GLASS_PANE, ChatColor.YELLOW + "*", false, null);
   }
@@ -322,6 +361,10 @@ public class CurrentItemsGUI {
   // --------------------
 
   private void _handleSkipItem(Player p) {
+    if (_isGamemodeDisabled(p)) {
+      return;
+    }
+
     if (!p.hasPermission(Permissions.ADMIN.getName())) {
       return;
     }
@@ -347,6 +390,10 @@ public class CurrentItemsGUI {
   }
 
   private void _handleNextItem(Player p) {
+    if (_isGamemodeDisabled(p)) {
+      return;
+    }
+
     if (!p.hasPermission(Permissions.ADMIN.getName())) {
       return;
     }
@@ -374,6 +421,15 @@ public class CurrentItemsGUI {
   // -------------------
   // CLICK ACTION HELPER
   // -------------------
+
+  private boolean _isGamemodeDisabled(Player p) {
+    if (_allTheItemsManager.isGamemodeEnabled()) {
+      return false;
+    }
+
+    p.sendMessage(Main.getPrefix() + ChatColor.RED + "Game mode is disabled. Action blocked.");
+    return true;
+  }
 
   private CustomGUI.ClickAction _clickAction(Consumer<Player> onLeft, Consumer<Player> onRight,
       Consumer<Player> onShiftLeft, Consumer<Player> onShiftRight) {
