@@ -127,7 +127,7 @@ public class SettingsGUI {
         false,
         List.of(
             "",
-            _GUI_LORE_PREFIX + ChatColor.RED + ChatColor.BOLD + "ATTENTION:" + _GUI_LORE_PREFIX
+            _GUI_LORE_PREFIX + ChatColor.RED + ChatColor.BOLD + "ATTENTION: " + ChatColor.GRAY
                 + "This will reset all progress.",
             "",
             _GUI_LORE_PREFIX + "The gamemode will be restarted and all progress will be lost.",

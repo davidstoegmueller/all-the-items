@@ -14,6 +14,8 @@ import java.util.stream.Collectors;
 
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
+import org.bukkit.Particle;
+import org.bukkit.Sound;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.Player;
@@ -243,19 +245,22 @@ public class AllTheItemsManager {
   // ----------------
 
   public void broadcastCurrentItemCollected(String itemName) {
-    _broadcast(ChatColor.GRAY + "Current item " + ChatColor.YELLOW + itemName + ChatColor.GRAY + " was collected.");
+    _broadcast(ChatColor.GRAY + "Current item " + ChatColor.YELLOW + itemName + ChatColor.GRAY + " was collected.",
+        BroadcastCelebration.COLLECTED);
   }
 
   public void broadcastCurrentItemSkipped(String itemName) {
-    _broadcast(ChatColor.GRAY + "Current item " + ChatColor.YELLOW + itemName + ChatColor.GRAY + " was skipped.");
+    _broadcast(ChatColor.GRAY + "Current item " + ChatColor.YELLOW + itemName + ChatColor.GRAY + " was skipped.",
+        BroadcastCelebration.SKIPPED);
   }
 
   public void broadcastNewItem(String itemName) {
-    _broadcast(ChatColor.GRAY + "New item is " + ChatColor.YELLOW + itemName + ChatColor.GRAY + ".");
+    _broadcast(ChatColor.GRAY + "New item is " + ChatColor.YELLOW + itemName + ChatColor.GRAY + ".",
+        BroadcastCelebration.NEW_ITEM);
   }
 
   public void broadcastAllItemsCompleted() {
-    _broadcast(ChatColor.GREEN + "All items have been collected.");
+    _broadcast(ChatColor.GREEN + "All items have been collected.", BroadcastCelebration.COMPLETE);
   }
 
   // ----------------
@@ -370,12 +375,70 @@ public class AllTheItemsManager {
     return materials;
   }
 
-  private void _broadcast(String message) {
+  private void _broadcast(String message, BroadcastCelebration celebration) {
     String prefixedMessage = Main.getPrefix() + message;
 
     for (Player player : Bukkit.getOnlinePlayers()) {
       player.sendMessage(prefixedMessage);
+
+      if (celebration != null) {
+        _playBroadcastCelebration(player, celebration);
+      }
     }
+  }
+
+  private void _playBroadcastCelebration(Player player, BroadcastCelebration celebration) {
+    switch (celebration) {
+      case COLLECTED:
+        _playCollectedCelebration(player);
+        break;
+      case SKIPPED:
+        _playCollectedCelebration(player);
+        break;
+      case NEW_ITEM:
+        _playCollectedCelebration(player);
+        break;
+      case COMPLETE:
+        _playCompleteCelebration(player);
+        break;
+      default:
+        break;
+    }
+  }
+
+  private void _playCollectedCelebration(Player player) {
+    player.playSound(player, Sound.ENTITY_PLAYER_LEVELUP, 0.7F, 1.25F);
+    player.playSound(player, Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 0.6F, 1.45F);
+
+    _spawnParticles(player, Particle.TOTEM_OF_UNDYING, 24, 0.45, 0.8, 0.45, 0.02);
+    _spawnParticles(player, Particle.HAPPY_VILLAGER, 18, 0.55, 0.9, 0.55, 0.06);
+    _spawnParticles(player, Particle.FLAME, 14, 0.4, 0.7, 0.4, 0.01);
+  }
+
+  private void _playCompleteCelebration(Player player) {
+    player.playSound(player, Sound.UI_TOAST_CHALLENGE_COMPLETE, 0.9F, 1.0F);
+    player.playSound(player, Sound.ENTITY_PLAYER_LEVELUP, 1.0F, 0.7F);
+
+    _spawnParticles(player, Particle.TOTEM_OF_UNDYING, 36, 0.65, 1.1, 0.65, 0.03);
+    _spawnParticles(player, Particle.END_ROD, 28, 0.75, 1.15, 0.75, 0.04);
+    _spawnParticles(player, Particle.HAPPY_VILLAGER, 24, 0.75, 1.0, 0.75, 0.08);
+    _spawnParticles(player, Particle.FLAME, 20, 0.55, 0.95, 0.55, 0.01);
+    _spawnParticles(player, Particle.PORTAL, 26, 0.75, 1.05, 0.75, 0.3);
+
+    Bukkit.getScheduler().runTaskLater(Main.getInstance(), () -> {
+      if (!player.isOnline()) {
+        return;
+      }
+
+      player.playSound(player, Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 0.75F, 1.65F);
+      _spawnParticles(player, Particle.TOTEM_OF_UNDYING, 20, 0.55, 0.95, 0.55, 0.02);
+      _spawnParticles(player, Particle.END_ROD, 18, 0.55, 0.95, 0.55, 0.03);
+    }, 8L);
+  }
+
+  private void _spawnParticles(Player player, Particle particle, int count, double offsetX, double offsetY,
+      double offsetZ, double extra) {
+    player.spawnParticle(particle, player.getLocation().add(0, 1.0, 0), count, offsetX, offsetY, offsetZ, extra);
   }
 
   // -----
@@ -398,5 +461,12 @@ public class AllTheItemsManager {
     public long getTimestamp() {
       return _timestamp;
     }
+  }
+
+  private enum BroadcastCelebration {
+    COLLECTED,
+    SKIPPED,
+    NEW_ITEM,
+    COMPLETE
   }
 }
