@@ -3,10 +3,12 @@ package com.daveestar.alltheitems;
 import java.util.logging.Logger;
 
 import org.bstats.bukkit.Metrics;
+import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import com.daveestar.alltheitems.commands.AllTheItemsCommand;
 import com.daveestar.alltheitems.enums.Permissions;
+import com.daveestar.alltheitems.events.InventoryCheckEvent;
 import com.daveestar.alltheitems.manager.AllTheItemsManager;
 import com.daveestar.alltheitems.utils.Config;
 
@@ -60,7 +62,9 @@ public class Main extends JavaPlugin {
   }
 
   private void _registerEvents() {
+    PluginManager pluginManager = getServer().getPluginManager();
 
+    pluginManager.registerEvents(new InventoryCheckEvent(), this);
   }
 
   // -------------------------
