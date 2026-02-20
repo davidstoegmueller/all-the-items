@@ -34,8 +34,8 @@ public class CurrentItemsGUI {
   private static final String _KEY_TOP_PLACEHOLDER_PREFIX = "topPlaceholder::";
 
   private static final int _GUI_ROWS = 2;
+  private static final int _TOP_ROW_SIZE = 9;
   private static final int _CURRENT_ITEM_SLOT = 4;
-  private static final int _MAX_VISIBLE_QUEUE_ITEMS = 2;
   private static final int _REMAINING_ITEMS_SLOT = (_GUI_ROWS - 1) * 9 + 0;
   private static final int _COLLECTED_ITEMS_SLOT = (_GUI_ROWS - 1) * 9 + 1;
   private static final int _SETTINGS_ITEM_SLOT = (_GUI_ROWS - 1) * 9 + 7;
@@ -123,12 +123,13 @@ public class CurrentItemsGUI {
   private void _addCurrentAndQueueEntries(Player p, Map<String, ItemStack> entries,
       Map<String, Integer> customSlots) {
     List<String> itemQueue = _allTheItemsManager.getQueue();
+    int visibleQueueItems = Math.min(_TOP_ROW_SIZE - 1, Math.max(itemQueue.size() - 1, 0));
     DynamicSlots dynamicSlots = _getDynamicSlots(itemQueue);
 
     entries.put(_KEY_CURRENT_ITEM, _createCurrentItemStateItem(p));
     customSlots.put(_KEY_CURRENT_ITEM, dynamicSlots.currentItemSlot());
 
-    for (int queueOffset = 1; queueOffset <= _MAX_VISIBLE_QUEUE_ITEMS; queueOffset++) {
+    for (int queueOffset = 1; queueOffset <= visibleQueueItems; queueOffset++) {
       int queueIndex = queueOffset;
       int queueIndexDisplay = queueIndex + 1;
 
@@ -137,7 +138,7 @@ public class CurrentItemsGUI {
       }
 
       int queueSlot = dynamicSlots.firstQueueItemSlot() + (queueOffset - 1);
-      if (queueSlot >= 9) {
+      if (queueSlot >= _TOP_ROW_SIZE) {
         break;
       }
 
@@ -151,7 +152,7 @@ public class CurrentItemsGUI {
 
   private DynamicSlots _getDynamicSlots(List<String> itemQueue) {
     int availableQueueItems = Math.max(itemQueue.size() - 1, 0);
-    int visibleItemCount = 1 + Math.min(_MAX_VISIBLE_QUEUE_ITEMS, availableQueueItems);
+    int visibleItemCount = 1 + Math.min(_TOP_ROW_SIZE - 1, availableQueueItems);
     int slotShift = (visibleItemCount - 1) / 2;
 
     int currentItemSlot = _CURRENT_ITEM_SLOT - slotShift;

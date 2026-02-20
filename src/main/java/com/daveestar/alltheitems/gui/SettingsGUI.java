@@ -15,6 +15,7 @@ import org.bukkit.inventory.meta.ItemMeta;
 import com.daveestar.alltheitems.Main;
 import com.daveestar.alltheitems.manager.AllTheItemsManager;
 import com.daveestar.alltheitems.utils.CompletionFireworkShow;
+import com.daveestar.alltheitems.utils.CustomDialog;
 import com.daveestar.alltheitems.utils.CustomGUI;
 
 import net.kyori.adventure.text.Component;
@@ -24,11 +25,13 @@ public class SettingsGUI {
   private static final String _KEY_TOGGLE_GAMEMODE = "action::toggle";
   private static final String _KEY_RESET_GAMEMODE = "action::reset";
   private static final String _KEY_MANUAL_FIREWORK_SHOW = "action::manualFireworkShow";
+  private static final String _KEY_QUEUE_ITEMS_AMOUNT = "action::queueItemsAmount";
 
   private static final int _GUI_ROWS = 2;
-  private static final int _TOGGLE_SLOT = 3;
-  private static final int _MANUAL_FIREWORK_SHOW_SLOT = 4;
-  private static final int _RESET_SLOT = 5;
+  private static final int _QUEUE_ITEMS_AMOUNT_SLOT = 3;
+  private static final int _TOGGLE_SLOT = 1;
+  private static final int _MANUAL_FIREWORK_SHOW_SLOT = 5;
+  private static final int _RESET_SLOT = 7;
 
   private final Main _plugin;
   private final AllTheItemsManager _allTheItemsManager;
@@ -41,9 +44,11 @@ public class SettingsGUI {
   public void displaySettingsGUI(Player p, CustomGUI parentGUI) {
     Map<String, ItemStack> entries = new LinkedHashMap<>();
     Map<String, Integer> customSlots = new LinkedHashMap<>();
+    entries.put(_KEY_QUEUE_ITEMS_AMOUNT, _createQueueItemsAmountItem());
     entries.put(_KEY_TOGGLE_GAMEMODE, _createToggleGamemodeItem());
     entries.put(_KEY_MANUAL_FIREWORK_SHOW, _createManualFireworkShowItem());
     entries.put(_KEY_RESET_GAMEMODE, _createResetGamemodeItem());
+    customSlots.put(_KEY_QUEUE_ITEMS_AMOUNT, _QUEUE_ITEMS_AMOUNT_SLOT);
     customSlots.put(_KEY_TOGGLE_GAMEMODE, _TOGGLE_SLOT);
     customSlots.put(_KEY_MANUAL_FIREWORK_SHOW, _MANUAL_FIREWORK_SHOW_SLOT);
     customSlots.put(_KEY_RESET_GAMEMODE, _RESET_SLOT);
@@ -66,6 +71,13 @@ public class SettingsGUI {
       }
     });
 
+    actions.put(_KEY_QUEUE_ITEMS_AMOUNT, new CustomGUI.ClickAction() {
+      @Override
+      public void onLeftClick(Player p) {
+        _handleQueueItemsAmount(p, parentGUI);
+      }
+    });
+
     actions.put(_KEY_RESET_GAMEMODE, new CustomGUI.ClickAction() {
       @Override
       public void onLeftClick(Player p) {
@@ -81,6 +93,7 @@ public class SettingsGUI {
     });
 
     settingsGUI.setClickActions(actions);
+    settingsGUI.setBackAction(player -> new CurrentItemsGUI().displayCurrentItemsGUI(player));
     settingsGUI.open(p);
   }
 
@@ -126,6 +139,40 @@ public class SettingsGUI {
     p.closeInventory();
   }
 
+  private void _handleQueueItemsAmount(Player p, CustomGUI parentGUI) {
+    int currentQueueItemsAmount = _allTheItemsManager.getQueueItemsAmount();
+    int minQueueItemsAmount = _allTheItemsManager.getMinQueueItemsAmount();
+    int maxQueueItemsAmount = _allTheItemsManager.getMaxQueueItemsAmount();
+
+    p.showDialog(CustomDialog.createConfirmationDialog(
+        "Queue Items Amount",
+        "Set the amount of queue items.",
+        null,
+        List.of(CustomDialog.createNumberInput(
+            "queueItemsAmount",
+            ChatColor.YELLOW + "» " + ChatColor.GRAY + "Queue items amount",
+            minQueueItemsAmount,
+            maxQueueItemsAmount,
+            1F,
+            currentQueueItemsAmount)),
+        (view, audience) -> {
+          Player player = (Player) audience;
+          Float queueItemsAmountValue = view.getFloat("queueItemsAmount");
+          int queueItemsAmount = queueItemsAmountValue == null
+              ? currentQueueItemsAmount
+              : Math.round(queueItemsAmountValue);
+
+          _allTheItemsManager.setQueueItemsAmount(queueItemsAmount);
+          player
+              .sendMessage(Main.getPrefix() + ChatColor.GREEN + "Queue items amount set to " + queueItemsAmount + ".");
+          displaySettingsGUI(player, parentGUI);
+        },
+        (view, audience) -> {
+          Player player = (Player) audience;
+          displaySettingsGUI(player, parentGUI);
+        }));
+  }
+
   // -----
   // ITEMS
   // -----
@@ -143,6 +190,20 @@ public class SettingsGUI {
                 + (isEnabled ? ChatColor.GREEN + "ENABLED" : ChatColor.RED + "DISABLED"),
             "",
             Main.getGuiLorePrefix() + "Left-Click: Toggle"));
+  }
+
+  private ItemStack _createQueueItemsAmountItem() {
+    int queueItemsAmount = _allTheItemsManager.getQueueItemsAmount();
+
+    return _createItem(
+        Material.HOPPER,
+        Main.getGuiItemPrefix() + "Queue Items Amount",
+        false,
+        List.of(
+            "",
+            Main.getGuiLorePrefix() + "Current Amount: " + ChatColor.YELLOW + queueItemsAmount,
+            "",
+            Main.getGuiLorePrefix() + "Left-Click: Set"));
   }
 
   private ItemStack _createResetGamemodeItem() {

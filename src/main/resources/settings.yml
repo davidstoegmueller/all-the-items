@@ -1,6 +1,9 @@
 gamemode:
   enabled: true
 
+queue:
+  itemsAmount: 2
+
 items:
   excluded:
     - ALLAY_SPAWN_EGG

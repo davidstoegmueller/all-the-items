@@ -37,7 +37,10 @@ public class AllTheItemsManager {
   private static final String _KEY_COMPLETE = "complete";
   private static final String _KEY_COLLECTED_NAME = "name";
   private static final String _KEY_COLLECTED_TIMESTAMP = "timestamp";
-  private static final int _TARGET_QUEUE_SIZE = 3;
+  private static final String _KEY_QUEUE_ITEMS_AMOUNT = "queue.itemsAmount";
+  private static final int _DEFAULT_QUEUE_ITEMS_AMOUNT = 2;
+  private static final int _MIN_QUEUE_ITEMS_AMOUNT = 0;
+  private static final int _MAX_QUEUE_ITEMS_AMOUNT = 8;
 
   private static final String _KEY_EXCLUDED_ITEMS = "items.excluded";
   private static final String _KEY_GAMEMODE_ENABLED = "gamemode.enabled";
@@ -242,6 +245,31 @@ public class AllTheItemsManager {
     _refreshBossBar();
   }
 
+  public int getQueueItemsAmount() {
+    int queueItemsAmount = _settingsFileConfig.getInt(_KEY_QUEUE_ITEMS_AMOUNT, _DEFAULT_QUEUE_ITEMS_AMOUNT);
+    return _normalizeQueueItemsAmount(queueItemsAmount);
+  }
+
+  public int getMinQueueItemsAmount() {
+    return _MIN_QUEUE_ITEMS_AMOUNT;
+  }
+
+  public int getMaxQueueItemsAmount() {
+    return _MAX_QUEUE_ITEMS_AMOUNT;
+  }
+
+  public void setQueueItemsAmount(int queueItemsAmount) {
+    int normalizedQueueItemsAmount = _normalizeQueueItemsAmount(queueItemsAmount);
+
+    _settingsFileConfig.set(_KEY_QUEUE_ITEMS_AMOUNT, normalizedQueueItemsAmount);
+    _settingsConfig.save();
+
+    List<String> remainingItems = getRemainingItems();
+    List<String> itemQueue = _getNormalizedQueue(remainingItems);
+    _saveState(remainingItems, getCollectedItems(), itemQueue);
+    _refreshBossBar();
+  }
+
   public void syncBossBarForPlayer(Player p) {
     if (_plugin.getBossBarUtils() == null || p == null) {
       return;
@@ -357,7 +385,9 @@ public class AllTheItemsManager {
   }
 
   private void _fillQueue(List<String> itemQueue, List<String> remainingItems, String avoidItem) {
-    while (itemQueue.size() < _TARGET_QUEUE_SIZE && itemQueue.size() < remainingItems.size()) {
+    int targetQueueSize = _getTargetQueueSize(remainingItems);
+
+    while (itemQueue.size() < targetQueueSize && itemQueue.size() < remainingItems.size()) {
       List<String> candidates = remainingItems.stream()
           .filter(item -> !itemQueue.contains(item))
           .collect(Collectors.toList());
@@ -399,6 +429,15 @@ public class AllTheItemsManager {
 
     List<String> itemQueue = new ArrayList<>(normalizedQueueSet);
 
+    int targetQueueSize = _getTargetQueueSize(remainingItems);
+    if (targetQueueSize <= 0) {
+      return new ArrayList<>();
+    }
+
+    if (itemQueue.size() > targetQueueSize) {
+      itemQueue = new ArrayList<>(itemQueue.subList(0, targetQueueSize));
+    }
+
     if (itemQueue.isEmpty()) {
       String legacyCurrent = _stateFileConfig.getString(_KEY_CURRENT);
       if (legacyCurrent != null && !legacyCurrent.isBlank() && remainingItems.contains(legacyCurrent)) {
@@ -406,9 +445,22 @@ public class AllTheItemsManager {
       }
     }
 
+    if (itemQueue.size() > targetQueueSize) {
+      itemQueue = new ArrayList<>(itemQueue.subList(0, targetQueueSize));
+    }
+
     _fillQueue(itemQueue, remainingItems, null);
 
     return itemQueue;
+  }
+
+  private int _getTargetQueueSize(List<String> remainingItems) {
+    int totalItemsInQueue = 1 + getQueueItemsAmount();
+    return Math.min(totalItemsInQueue, remainingItems.size());
+  }
+
+  private int _normalizeQueueItemsAmount(int queueItemsAmount) {
+    return Math.max(_MIN_QUEUE_ITEMS_AMOUNT, Math.min(_MAX_QUEUE_ITEMS_AMOUNT, queueItemsAmount));
   }
 
   // --------------
