@@ -44,8 +44,7 @@ public class RemainingItemsGUI {
         parentGUI,
         EnumSet.of(CustomGUI.Option.ENABLE_SEARCH));
 
-    Map<String, CustomGUI.ClickAction> actions = new LinkedHashMap<>();
-    remainingItemsGUI.setClickActions(actions);
+    remainingItemsGUI.setClickActions(Map.of());
 
     remainingItemsGUI.open(p);
   }

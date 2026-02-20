@@ -84,7 +84,6 @@ public class CurrentItemsGUI {
           if (_isGamemodeDisabled(player)) {
             return;
           }
-
           _remainingItemsGUI.displayRemainingItemsGUI(player, currentItemsGUI);
         },
         null,
@@ -96,7 +95,6 @@ public class CurrentItemsGUI {
           if (_isGamemodeDisabled(player)) {
             return;
           }
-
           _collectedItemsGUI.displayCollectedItemsGUI(player, currentItemsGUI);
         },
         null,
@@ -362,16 +360,13 @@ public class CurrentItemsGUI {
     }
 
     String currentItem = _allTheItemsManager.getCurrentItem();
-    Material currentMaterial = currentItem == null ? null : Material.matchMaterial(currentItem);
-    String currentItemName = currentMaterial == null ? currentItem
-        : _allTheItemsManager.getTranslatedItemName(currentMaterial);
+    String currentItemName = _getItemDisplayName(currentItem);
 
     String nextItem = _allTheItemsManager.skipItem();
     if (nextItem == null) {
       _allTheItemsManager.broadcastAllItemsCompleted();
     } else {
-      Material nextMaterial = nextItem == null ? null : Material.matchMaterial(nextItem);
-      String nextName = nextMaterial == null ? nextItem : _allTheItemsManager.getTranslatedItemName(nextMaterial);
+      String nextName = _getItemDisplayName(nextItem);
 
       _allTheItemsManager.broadcastCurrentItemSkipped(currentItemName);
       _allTheItemsManager.broadcastNewItem(nextName);
@@ -390,16 +385,13 @@ public class CurrentItemsGUI {
     }
 
     String currentItem = _allTheItemsManager.getCurrentItem();
-    Material currentMaterial = currentItem == null ? null : Material.matchMaterial(currentItem);
-    String currentItemName = currentMaterial == null ? currentItem
-        : _allTheItemsManager.getTranslatedItemName(currentMaterial);
+    String currentItemName = _getItemDisplayName(currentItem);
 
     String nextItem = _allTheItemsManager.nextItem();
     if (nextItem == null) {
       _allTheItemsManager.broadcastAllItemsCompleted();
     } else {
-      Material nextMaterial = nextItem == null ? null : Material.matchMaterial(nextItem);
-      String nextName = nextMaterial == null ? nextItem : _allTheItemsManager.getTranslatedItemName(nextMaterial);
+      String nextName = _getItemDisplayName(nextItem);
 
       _allTheItemsManager.broadcastCurrentItemCollected(currentItemName);
       _allTheItemsManager.broadcastNewItem(nextName);
@@ -419,6 +411,11 @@ public class CurrentItemsGUI {
 
     p.sendMessage(Main.getPrefix() + ChatColor.RED + "Game mode is disabled. Action blocked.");
     return true;
+  }
+
+  private String _getItemDisplayName(String itemName) {
+    Material material = itemName == null ? null : Material.matchMaterial(itemName);
+    return material == null ? itemName : _allTheItemsManager.getTranslatedItemName(material);
   }
 
   // -------------

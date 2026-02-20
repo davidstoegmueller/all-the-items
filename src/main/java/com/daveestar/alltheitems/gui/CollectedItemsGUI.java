@@ -54,8 +54,7 @@ public class CollectedItemsGUI {
         parentGUI,
         EnumSet.of(CustomGUI.Option.ENABLE_SEARCH));
 
-    Map<String, CustomGUI.ClickAction> actions = new LinkedHashMap<>();
-    collectedItemsGUI.setClickActions(actions);
+    collectedItemsGUI.setClickActions(Map.of());
 
     collectedItemsGUI.open(p);
   }

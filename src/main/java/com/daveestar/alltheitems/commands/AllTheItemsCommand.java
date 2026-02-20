@@ -19,12 +19,10 @@ public class AllTheItemsCommand implements CommandExecutor {
 
   @Override
   public boolean onCommand(CommandSender cs, Command c, String label, String[] args) {
-    if (!(cs instanceof Player)) {
+    if (!(cs instanceof Player p)) {
       cs.sendMessage(Main.getNoPlayerMessage());
       return true;
     }
-
-    Player p = (Player) cs;
 
     if (args.length > 0) {
       p.sendMessage(Main.getPrefix() + ChatColor.RED + "Usage: " + ChatColor.YELLOW + "/alltheitems");

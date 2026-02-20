@@ -72,12 +72,7 @@ public class AllTheItemsManager {
   }
 
   public void initGamemode() {
-    if (!isGamemodeEnabled()) {
-      _refreshBossBar();
-      return;
-    }
-
-    if (isComplete()) {
+    if (!isGamemodeEnabled() || isComplete()) {
       _refreshBossBar();
       return;
     }
@@ -458,11 +453,9 @@ public class AllTheItemsManager {
 
     Set<Material> excludedItems = _getExcludedItemsFromConfig();
 
-    List<Material> materials = Arrays.stream(Material.values())
+    return Arrays.stream(Material.values())
         .filter(material -> material.isItem() && !excludedItems.contains(material))
         .collect(Collectors.toList());
-
-    return materials;
   }
 
   // -----------------
@@ -484,11 +477,7 @@ public class AllTheItemsManager {
   private void _playBroadcastCelebration(Player p, BroadcastCelebration celebration) {
     switch (celebration) {
       case COLLECTED:
-        _playCollectedCelebration(p);
-        break;
       case SKIPPED:
-        _playCollectedCelebration(p);
-        break;
       case NEW_ITEM:
         _playCollectedCelebration(p);
         break;
@@ -567,11 +556,9 @@ public class AllTheItemsManager {
   private String _buildBossBarTitle(String currentItem) {
     String itemDisplayName = getTranslatedItemName(currentItem);
     String progressPercentageDisplay = String.format(Locale.ROOT, "%.1f%%", getProgressPercentage());
-    String title = Main.getBossBarPrefix() + "Item: " + ChatColor.YELLOW + itemDisplayName + ChatColor.GRAY
+    return Main.getBossBarPrefix() + "Item: " + ChatColor.YELLOW + itemDisplayName + ChatColor.GRAY
         + " (" + getCollectedItemsAmount() + "/" + getTotalItemsAmount() + " » "
         + progressPercentageDisplay + ")";
-
-    return title;
   }
 
   // -----

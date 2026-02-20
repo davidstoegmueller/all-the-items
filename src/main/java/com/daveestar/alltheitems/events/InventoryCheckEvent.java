@@ -65,7 +65,7 @@ public class InventoryCheckEvent implements Listener {
 
   @EventHandler
   public void onPlayerJoin(PlayerJoinEvent e) {
-    Player p = (Player) e.getPlayer();
+    Player p = e.getPlayer();
 
     _allTheItemsManager.syncBossBarForPlayer(p);
     _scheduleInventoryCheck(p);
