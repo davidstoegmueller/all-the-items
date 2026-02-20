@@ -90,6 +90,18 @@ public class Main extends JavaPlugin {
     return ChatColor.YELLOW + "» " + ChatColor.GRAY;
   }
 
+  public static String getGuiTitlePrefix() {
+    return ChatColor.YELLOW + "" + ChatColor.BOLD + "» ";
+  }
+
+  public static String getGuiItemPrefix() {
+    return ChatColor.RED + "" + ChatColor.BOLD + "» " + ChatColor.YELLOW;
+  }
+
+  public static String getGuiLorePrefix() {
+    return ChatColor.YELLOW + "» " + ChatColor.GRAY;
+  }
+
   public static String getNoPlayerMessage() {
     return getPrefix() + ChatColor.RED + "This command can only be run by a player.";
   }

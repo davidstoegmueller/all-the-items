@@ -21,10 +21,6 @@ import net.kyori.adventure.text.Component;
 import net.md_5.bungee.api.ChatColor;
 
 public class SettingsGUI {
-  private static final String _GUI_TITLE_PREFIX = ChatColor.YELLOW + "" + ChatColor.BOLD + "» ";
-  private static final String _GUI_ITEM_PREFIX = ChatColor.RED + "" + ChatColor.BOLD + "» " + ChatColor.YELLOW;
-  private static final String _GUI_LORE_PREFIX = ChatColor.YELLOW + "» " + ChatColor.GRAY;
-
   private static final String _KEY_TOGGLE_GAMEMODE = "action::toggle";
   private static final String _KEY_RESET_GAMEMODE = "action::reset";
   private static final String _KEY_MANUAL_FIREWORK_SHOW = "action::manualFireworkShow";
@@ -55,7 +51,7 @@ public class SettingsGUI {
     CustomGUI settingsGUI = new CustomGUI(
         _plugin,
         p,
-        Main.getPrefix() + _GUI_TITLE_PREFIX + "Settings",
+        Main.getPrefix() + Main.getGuiTitlePrefix() + "Settings",
         entries,
         _GUI_ROWS,
         customSlots,
@@ -131,41 +127,41 @@ public class SettingsGUI {
 
     return _createItem(
         isEnabled ? Material.LIME_DYE : Material.GRAY_DYE,
-        _GUI_ITEM_PREFIX + "Game Mode",
+        Main.getGuiItemPrefix() + "Game Mode",
         false,
         List.of(
             "",
-            _GUI_LORE_PREFIX + "Current State: "
+            Main.getGuiLorePrefix() + "Current State: "
                 + (isEnabled ? ChatColor.GREEN + "ENABLED" : ChatColor.RED + "DISABLED"),
             "",
-            _GUI_LORE_PREFIX + "Left-Click: Toggle"));
+            Main.getGuiLorePrefix() + "Left-Click: Toggle"));
   }
 
   private ItemStack _createResetGamemodeItem() {
     return _createItem(
         Material.BARRIER,
-        _GUI_ITEM_PREFIX + "Reset Game Mode",
+        Main.getGuiItemPrefix() + "Reset Game Mode",
         false,
         List.of(
             "",
-            _GUI_LORE_PREFIX + ChatColor.RED + ChatColor.BOLD + "ATTENTION: " + ChatColor.GRAY
+            Main.getGuiLorePrefix() + ChatColor.RED + ChatColor.BOLD + "ATTENTION: " + ChatColor.GRAY
                 + "This will reset all progress.",
             "",
-            _GUI_LORE_PREFIX + "The gamemode will be restarted and all progress will be lost.",
+            Main.getGuiLorePrefix() + "The gamemode will be restarted and all progress will be lost.",
             "",
-            _GUI_LORE_PREFIX + "Left-Click: Reset game mode"));
+            Main.getGuiLorePrefix() + "Left-Click: Reset game mode"));
   }
 
   private ItemStack _createManualFireworkShowItem() {
     return _createItem(
         Material.FIREWORK_ROCKET,
-        _GUI_ITEM_PREFIX + "Manual Firework Show",
+        Main.getGuiItemPrefix() + "Manual Firework Show",
         true,
         List.of(
             "",
-            _GUI_LORE_PREFIX + "Because its just an awesome show.",
+            Main.getGuiLorePrefix() + "Because its just an awesome show.",
             "",
-            _GUI_LORE_PREFIX + "Left-Click: Start firework show"));
+            Main.getGuiLorePrefix() + "Left-Click: Start firework show"));
   }
 
   private ItemStack _createItem(Material material, String displayName, boolean setEnchanted, List<String> lore) {

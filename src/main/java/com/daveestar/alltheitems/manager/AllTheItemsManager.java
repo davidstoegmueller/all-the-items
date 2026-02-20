@@ -25,6 +25,8 @@ import com.daveestar.alltheitems.Main;
 import com.daveestar.alltheitems.utils.Config;
 import com.daveestar.alltheitems.utils.CompletionFireworkShow;
 
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 import net.md_5.bungee.api.ChatColor;
 
 public class AllTheItemsManager {
@@ -304,6 +306,30 @@ public class AllTheItemsManager {
     return progress;
   }
 
+  public String getTranslatedItemName(Material material) {
+    if (material == null) {
+      return "Unknown";
+    }
+
+    String translatedItemKey = material.getItemTranslationKey();
+    Component itemNameComponent = Component.translatable(translatedItemKey);
+
+    return PlainTextComponentSerializer.plainText().serialize(itemNameComponent);
+  }
+
+  public String getTranslatedItemName(String itemName) {
+    if (itemName == null || itemName.isBlank()) {
+      return itemName;
+    }
+
+    Material material = Material.matchMaterial(itemName);
+    if (material == null) {
+      return itemName;
+    }
+
+    return getTranslatedItemName(material);
+  }
+
   // ----------------
   // PLAYER MESSAGES
   // ----------------
@@ -527,38 +553,13 @@ public class AllTheItemsManager {
   }
 
   private String _buildBossBarTitle(String currentItem) {
-    String itemDisplayName = _toDisplayName(currentItem);
+    String itemDisplayName = getTranslatedItemName(currentItem);
     String progressPercentageDisplay = String.format(Locale.ROOT, "%.1f%%", getProgressPercentage());
     String title = Main.getBossBarPrefix() + "Item: " + ChatColor.YELLOW + itemDisplayName + ChatColor.GRAY
         + " (" + getCollectedItemsAmount() + "/" + getTotalItemsAmount() + " » "
         + progressPercentageDisplay + ")";
 
     return title;
-  }
-
-  private String _toDisplayName(String itemName) {
-    Material material = Material.matchMaterial(itemName);
-    if (material == null) {
-      return itemName;
-    }
-
-    String normalizedName = material.name().toLowerCase(Locale.ROOT).replace('_', ' ');
-    String[] words = normalizedName.split(" ");
-    StringBuilder result = new StringBuilder();
-
-    for (String word : words) {
-      if (word.isEmpty()) {
-        continue;
-      }
-
-      if (result.length() > 0) {
-        result.append(" ");
-      }
-
-      result.append(Character.toUpperCase(word.charAt(0))).append(word.substring(1));
-    }
-
-    return result.toString();
   }
 
   // -----

@@ -16,14 +16,9 @@ import com.daveestar.alltheitems.manager.AllTheItemsManager;
 import com.daveestar.alltheitems.utils.CustomGUI;
 
 import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 import net.md_5.bungee.api.ChatColor;
 
 public class RemainingItemsGUI {
-  private static final String _GUI_TITLE_PREFIX = ChatColor.YELLOW + "" + ChatColor.BOLD + "» ";
-  private static final String _GUI_ITEM_PREFIX = ChatColor.RED + "" + ChatColor.BOLD + "» " + ChatColor.YELLOW;
-  private static final String _GUI_LORE_PREFIX = ChatColor.YELLOW + "» " + ChatColor.GRAY;
-
   private static final String _KEY_ITEM_PREFIX = "remaining::";
 
   private static final int _GUI_ROWS = 6;
@@ -42,7 +37,7 @@ public class RemainingItemsGUI {
     CustomGUI remainingItemsGUI = new CustomGUI(
         _plugin,
         p,
-        Main.getPrefix() + _GUI_TITLE_PREFIX + "Remaining Items",
+        Main.getPrefix() + Main.getGuiTitlePrefix() + "Remaining Items",
         entries,
         _GUI_ROWS,
         null,
@@ -78,27 +73,20 @@ public class RemainingItemsGUI {
     if (material == null) {
       return _createItem(
           Material.BARRIER,
-          _GUI_ITEM_PREFIX + itemName,
+          Main.getGuiItemPrefix() + itemName,
           false,
           List.of(
               "",
-              _GUI_LORE_PREFIX + "Invalid material in remaining list."));
+              Main.getGuiLorePrefix() + "Invalid material in remaining list."));
     }
 
     return _createItem(
         material,
-        _GUI_ITEM_PREFIX + _getTranslatedItemName(material),
+        Main.getGuiItemPrefix() + _allTheItemsManager.getTranslatedItemName(material),
         false,
         List.of(
             "",
-            _GUI_LORE_PREFIX + ChatColor.RED + "NOT COLLECTED"));
-  }
-
-  private String _getTranslatedItemName(Material material) {
-    String translatedItemKey = material.getItemTranslationKey();
-    Component itemNameComponent = Component.translatable(translatedItemKey);
-
-    return PlainTextComponentSerializer.plainText().serialize(itemNameComponent);
+            Main.getGuiLorePrefix() + ChatColor.RED + "NOT COLLECTED"));
   }
 
   private ItemStack _createItem(Material material, String displayName, boolean setEnchanted, List<String> lore) {

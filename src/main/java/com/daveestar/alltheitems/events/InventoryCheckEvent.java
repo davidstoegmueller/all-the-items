@@ -16,9 +16,6 @@ import org.bukkit.event.player.PlayerQuitEvent;
 import com.daveestar.alltheitems.Main;
 import com.daveestar.alltheitems.manager.AllTheItemsManager;
 
-import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
-
 public class InventoryCheckEvent implements Listener {
   private static final int _MAX_AUTO_COLLECTIONS_PER_CHECK = 256;
 
@@ -88,6 +85,10 @@ public class InventoryCheckEvent implements Listener {
     Bukkit.getScheduler().runTask(_plugin, () -> _checkPlayerInventory(p));
   }
 
+  // ----------------------
+  // CHECK PLAYER INVENTORY
+  // ----------------------
+
   private void _checkPlayerInventory(Player p) {
     if (!_allTheItemsManager.isGamemodeEnabled() || _allTheItemsManager.isComplete()) {
       return;
@@ -108,7 +109,7 @@ public class InventoryCheckEvent implements Listener {
         break;
       }
 
-      String collectedItemDisplayName = _getTranslatedItemName(currentMaterial);
+      String collectedItemDisplayName = _allTheItemsManager.getTranslatedItemName(currentMaterial);
       _allTheItemsManager.nextItem();
 
       _allTheItemsManager.broadcastCurrentItemCollected(collectedItemDisplayName);
@@ -120,16 +121,10 @@ public class InventoryCheckEvent implements Listener {
 
       String nextItem = _allTheItemsManager.getCurrentItem();
       Material nextMaterial = nextItem == null ? null : Material.matchMaterial(nextItem);
-      String nextItemDisplayName = nextMaterial == null ? nextItem : _getTranslatedItemName(nextMaterial);
+      String nextItemDisplayName = nextMaterial == null ? nextItem
+          : _allTheItemsManager.getTranslatedItemName(nextMaterial);
 
       _allTheItemsManager.broadcastNewItem(nextItemDisplayName);
     }
-  }
-
-  private String _getTranslatedItemName(Material material) {
-    String translatedItemKey = material.getItemTranslationKey();
-    Component itemNameComponent = Component.translatable(translatedItemKey);
-
-    return PlainTextComponentSerializer.plainText().serialize(itemNameComponent);
   }
 }

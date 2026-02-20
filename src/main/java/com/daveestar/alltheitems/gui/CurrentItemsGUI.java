@@ -22,14 +22,9 @@ import com.daveestar.alltheitems.manager.AllTheItemsManager;
 import com.daveestar.alltheitems.utils.CustomGUI;
 
 import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 import net.md_5.bungee.api.ChatColor;
 
 public class CurrentItemsGUI {
-  private static final String _GUI_TITLE_PREFIX = ChatColor.YELLOW + "" + ChatColor.BOLD + "» ";
-  private static final String _GUI_ITEM_PREFIX = ChatColor.RED + "" + ChatColor.BOLD + "» " + ChatColor.YELLOW;
-  private static final String _GUI_LORE_PREFIX = ChatColor.YELLOW + "» " + ChatColor.GRAY;
-
   private static final String _KEY_CURRENT_ITEM = "currentItem";
   private static final String _KEY_QUEUE_ITEM_PREFIX = "queueItem::";
   private static final String _KEY_REMAINING_ITEMS = "action::openRemainingItems";
@@ -70,7 +65,7 @@ public class CurrentItemsGUI {
     CustomGUI currentItemsGUI = new CustomGUI(
         _plugin,
         p,
-        Main.getPrefix() + _GUI_TITLE_PREFIX + "Current Items",
+        Main.getPrefix() + Main.getGuiTitlePrefix() + "Current Items",
         entries,
         _GUI_ROWS,
         customSlots,
@@ -179,12 +174,12 @@ public class CurrentItemsGUI {
     if (isComplete) {
       return _createItem(
           Material.NETHER_STAR,
-          _GUI_ITEM_PREFIX + "Completed",
+          Main.getGuiItemPrefix() + "Completed",
           true, List.of(
               "",
-              _GUI_LORE_PREFIX + "Congratulations!",
+              Main.getGuiLorePrefix() + "Congratulations!",
               "",
-              _GUI_LORE_PREFIX + "All items have been collected."));
+              Main.getGuiLorePrefix() + "All items have been collected."));
     }
 
     Material currentMaterial = Material.matchMaterial(currentItemName);
@@ -192,28 +187,28 @@ public class CurrentItemsGUI {
     if (currentMaterial == null) {
       return _createItem(
           Material.BARRIER,
-          _GUI_ITEM_PREFIX + "Unknown Item",
+          Main.getGuiItemPrefix() + "Unknown Item",
           true,
           List.of(
               "",
-              _GUI_LORE_PREFIX + "Something went wrong while fetching the current item."));
+              Main.getGuiLorePrefix() + "Something went wrong while fetching the current item."));
     }
 
     List<String> lore = new ArrayList<>(List.of(
         "",
-        _GUI_LORE_PREFIX + "#1 - Current Item",
-        _GUI_LORE_PREFIX + "Collect this item to progress."));
+        Main.getGuiLorePrefix() + "#1 - Current Item",
+        Main.getGuiLorePrefix() + "Collect this item to progress."));
 
     if (p.hasPermission(Permissions.ADMIN.getName())) {
       lore.add("");
-      lore.add(_GUI_LORE_PREFIX + "Shift + Left-Click: Skip for later");
-      lore.add(_GUI_LORE_PREFIX + "Shift + Right-Click: Collect & Next Item");
+      lore.add(Main.getGuiLorePrefix() + "Shift + Left-Click: Skip for later");
+      lore.add(Main.getGuiLorePrefix() + "Shift + Right-Click: Collect & Next Item");
 
     }
 
     return _createItem(
         currentMaterial,
-        _GUI_ITEM_PREFIX + _getTranslatedItemName(currentMaterial),
+        Main.getGuiItemPrefix() + _allTheItemsManager.getTranslatedItemName(currentMaterial),
         true,
         lore);
   }
@@ -224,46 +219,46 @@ public class CurrentItemsGUI {
     if (queueMaterial == null) {
       return _createItem(
           Material.BARRIER,
-          _GUI_ITEM_PREFIX + "Unknown Queue Item",
+          Main.getGuiItemPrefix() + "Unknown Queue Item",
           false,
           List.of(
               "",
-              _GUI_LORE_PREFIX + "#" + queueIndex + " - Queue Item",
-              _GUI_LORE_PREFIX + "Something went wrong while fetching this queue item."));
+              Main.getGuiLorePrefix() + "#" + queueIndex + " - Queue Item",
+              Main.getGuiLorePrefix() + "Something went wrong while fetching this queue item."));
     }
 
     return _createItem(
         queueMaterial,
-        _GUI_ITEM_PREFIX + _getTranslatedItemName(queueMaterial),
+        Main.getGuiItemPrefix() + _allTheItemsManager.getTranslatedItemName(queueMaterial),
         false,
         List.of(
             "",
-            _GUI_LORE_PREFIX + "#" + queueIndex + " - Queue Item",
-            _GUI_LORE_PREFIX + "Upcoming item."));
+            Main.getGuiLorePrefix() + "#" + queueIndex + " - Queue Item",
+            Main.getGuiLorePrefix() + "Upcoming item."));
   }
 
   private ItemStack _createOpenRemainingItemsItem() {
     return _createItem(
         Material.CHEST,
-        _GUI_ITEM_PREFIX + "Remaining Items",
+        Main.getGuiItemPrefix() + "Remaining Items",
         false,
         List.of(
             "",
-            _GUI_LORE_PREFIX + "Open all remaining items.",
+            Main.getGuiLorePrefix() + "Open all remaining items.",
             "",
-            _GUI_LORE_PREFIX + "Left-Click: Open"));
+            Main.getGuiLorePrefix() + "Left-Click: Open"));
   }
 
   private ItemStack _createOpenCollectedItemsItem() {
     return _createItem(
         Material.ENDER_CHEST,
-        _GUI_ITEM_PREFIX + "Collected Items",
+        Main.getGuiItemPrefix() + "Collected Items",
         false,
         List.of(
             "",
-            _GUI_LORE_PREFIX + "Open all collected items.",
+            Main.getGuiLorePrefix() + "Open all collected items.",
             "",
-            _GUI_LORE_PREFIX + "Left-Click: Open"));
+            Main.getGuiLorePrefix() + "Left-Click: Open"));
   }
 
   private ItemStack _createInfoItem() {
@@ -277,37 +272,37 @@ public class CurrentItemsGUI {
     Material currentMaterial = currentItem == null ? null : Material.matchMaterial(currentItem);
     String currentItemName = _allTheItemsManager.isComplete()
         ? "Completed"
-        : currentMaterial == null ? "None" : _getTranslatedItemName(currentMaterial);
+        : currentMaterial == null ? "None" : _allTheItemsManager.getTranslatedItemName(currentMaterial);
 
     return _createItem(
         Material.BOOK,
-        _GUI_ITEM_PREFIX + "Info",
+        Main.getGuiItemPrefix() + "Info",
         false,
         List.of(
             "",
-            _GUI_LORE_PREFIX + "Goal: Collect every item once.",
-            _GUI_LORE_PREFIX + "Collect the current item to progress.",
-            _GUI_LORE_PREFIX + "Auto-marks item as collected when obtained.",
-            _GUI_LORE_PREFIX + "The queue shows your next items.",
+            Main.getGuiLorePrefix() + "Goal: Collect every item once.",
+            Main.getGuiLorePrefix() + "Collect the current item to progress.",
+            Main.getGuiLorePrefix() + "Auto-marks item as collected when obtained.",
+            Main.getGuiLorePrefix() + "The queue shows your next items.",
             "",
             ChatColor.GRAY + "Progress Overview:",
-            _GUI_LORE_PREFIX + "Total Items: " + ChatColor.YELLOW + totalItemsAmount,
-            _GUI_LORE_PREFIX + "Items Remaining: " + ChatColor.YELLOW + remainingItemsAmount,
-            _GUI_LORE_PREFIX + "Items Collected: " + ChatColor.YELLOW + collectedItemsAmount,
-            _GUI_LORE_PREFIX + "Progress: " + ChatColor.YELLOW + progressPercentageDisplay,
-            _GUI_LORE_PREFIX + "Current Item: " + ChatColor.YELLOW + currentItemName));
+            Main.getGuiLorePrefix() + "Total Items: " + ChatColor.YELLOW + totalItemsAmount,
+            Main.getGuiLorePrefix() + "Items Remaining: " + ChatColor.YELLOW + remainingItemsAmount,
+            Main.getGuiLorePrefix() + "Items Collected: " + ChatColor.YELLOW + collectedItemsAmount,
+            Main.getGuiLorePrefix() + "Progress: " + ChatColor.YELLOW + progressPercentageDisplay,
+            Main.getGuiLorePrefix() + "Current Item: " + ChatColor.YELLOW + currentItemName));
   }
 
   private ItemStack _createOpenSettingsItem() {
     return _createItem(
         Material.COMPARATOR,
-        _GUI_ITEM_PREFIX + "Settings",
+        Main.getGuiItemPrefix() + "Settings",
         false,
         List.of(
             "",
-            _GUI_LORE_PREFIX + "Open game mode settings.",
+            Main.getGuiLorePrefix() + "Open game mode settings.",
             "",
-            _GUI_LORE_PREFIX + "Left-Click: Open"));
+            Main.getGuiLorePrefix() + "Left-Click: Open"));
   }
 
   private ItemStack _createPlaceholderItem() {
@@ -353,13 +348,6 @@ public class CurrentItemsGUI {
     return item;
   }
 
-  private String _getTranslatedItemName(Material material) {
-    String translatedItemKey = material.getItemTranslationKey();
-    Component itemNameComponent = Component.translatable(translatedItemKey);
-
-    return PlainTextComponentSerializer.plainText().serialize(itemNameComponent);
-  }
-
   // --------------------
   // CLICK ACTION HANDLER
   // --------------------
@@ -375,14 +363,15 @@ public class CurrentItemsGUI {
 
     String currentItem = _allTheItemsManager.getCurrentItem();
     Material currentMaterial = currentItem == null ? null : Material.matchMaterial(currentItem);
-    String currentItemName = currentMaterial == null ? currentItem : _getTranslatedItemName(currentMaterial);
+    String currentItemName = currentMaterial == null ? currentItem
+        : _allTheItemsManager.getTranslatedItemName(currentMaterial);
 
     String nextItem = _allTheItemsManager.skipItem();
     if (nextItem == null) {
       _allTheItemsManager.broadcastAllItemsCompleted();
     } else {
       Material nextMaterial = nextItem == null ? null : Material.matchMaterial(nextItem);
-      String nextName = nextMaterial == null ? nextItem : _getTranslatedItemName(nextMaterial);
+      String nextName = nextMaterial == null ? nextItem : _allTheItemsManager.getTranslatedItemName(nextMaterial);
 
       _allTheItemsManager.broadcastCurrentItemSkipped(currentItemName);
       _allTheItemsManager.broadcastNewItem(nextName);
@@ -402,14 +391,15 @@ public class CurrentItemsGUI {
 
     String currentItem = _allTheItemsManager.getCurrentItem();
     Material currentMaterial = currentItem == null ? null : Material.matchMaterial(currentItem);
-    String currentItemName = currentMaterial == null ? currentItem : _getTranslatedItemName(currentMaterial);
+    String currentItemName = currentMaterial == null ? currentItem
+        : _allTheItemsManager.getTranslatedItemName(currentMaterial);
 
     String nextItem = _allTheItemsManager.nextItem();
     if (nextItem == null) {
       _allTheItemsManager.broadcastAllItemsCompleted();
     } else {
       Material nextMaterial = nextItem == null ? null : Material.matchMaterial(nextItem);
-      String nextName = nextMaterial == null ? nextItem : _getTranslatedItemName(nextMaterial);
+      String nextName = nextMaterial == null ? nextItem : _allTheItemsManager.getTranslatedItemName(nextMaterial);
 
       _allTheItemsManager.broadcastCurrentItemCollected(currentItemName);
       _allTheItemsManager.broadcastNewItem(nextName);
