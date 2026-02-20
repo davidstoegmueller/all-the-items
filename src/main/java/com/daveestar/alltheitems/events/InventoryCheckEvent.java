@@ -10,6 +10,8 @@ import org.bukkit.event.inventory.CraftItemEvent;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryDragEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
+import org.bukkit.event.player.PlayerKickEvent;
+import org.bukkit.event.player.PlayerQuitEvent;
 
 import com.daveestar.alltheitems.Main;
 import com.daveestar.alltheitems.manager.AllTheItemsManager;
@@ -29,51 +31,64 @@ public class InventoryCheckEvent implements Listener {
   }
 
   @EventHandler(ignoreCancelled = true)
-  public void onEntityPickupItem(EntityPickupItemEvent event) {
-    if (!(event.getEntity() instanceof Player player)) {
+  public void onEntityPickupItem(EntityPickupItemEvent e) {
+    if (!(e.getEntity() instanceof Player p)) {
       return;
     }
 
-    _scheduleInventoryCheck(player);
+    _scheduleInventoryCheck(p);
   }
 
   @EventHandler(ignoreCancelled = true)
-  public void onInventoryClick(InventoryClickEvent event) {
-    if (!(event.getWhoClicked() instanceof Player player)) {
+  public void onInventoryClick(InventoryClickEvent e) {
+    if (!(e.getWhoClicked() instanceof Player p)) {
       return;
     }
 
-    _scheduleInventoryCheck(player);
+    _scheduleInventoryCheck(p);
   }
 
   @EventHandler(ignoreCancelled = true)
-  public void onInventoryDrag(InventoryDragEvent event) {
-    if (!(event.getWhoClicked() instanceof Player player)) {
+  public void onInventoryDrag(InventoryDragEvent e) {
+    if (!(e.getWhoClicked() instanceof Player p)) {
       return;
     }
 
-    _scheduleInventoryCheck(player);
+    _scheduleInventoryCheck(p);
   }
 
   @EventHandler(ignoreCancelled = true)
-  public void onCraftItem(CraftItemEvent event) {
-    if (!(event.getWhoClicked() instanceof Player player)) {
+  public void onCraftItem(CraftItemEvent e) {
+    if (!(e.getWhoClicked() instanceof Player p)) {
       return;
     }
 
-    _scheduleInventoryCheck(player);
+    _scheduleInventoryCheck(p);
   }
 
   @EventHandler
-  public void onPlayerJoin(PlayerJoinEvent event) {
-    _scheduleInventoryCheck(event.getPlayer());
+  public void onPlayerJoin(PlayerJoinEvent e) {
+    Player p = (Player) e.getPlayer();
+
+    _allTheItemsManager.syncBossBarForPlayer(p);
+    _scheduleInventoryCheck(p);
   }
 
-  private void _scheduleInventoryCheck(Player player) {
-    Bukkit.getScheduler().runTask(_plugin, () -> _checkPlayerInventory(player));
+  @EventHandler
+  public void onPlayerQuit(PlayerQuitEvent e) {
+    _allTheItemsManager.clearBossBarForPlayer(e.getPlayer());
   }
 
-  private void _checkPlayerInventory(Player player) {
+  @EventHandler
+  public void onPlayerKick(PlayerKickEvent e) {
+    _allTheItemsManager.clearBossBarForPlayer(e.getPlayer());
+  }
+
+  private void _scheduleInventoryCheck(Player p) {
+    Bukkit.getScheduler().runTask(_plugin, () -> _checkPlayerInventory(p));
+  }
+
+  private void _checkPlayerInventory(Player p) {
     if (!_allTheItemsManager.isGamemodeEnabled() || _allTheItemsManager.isComplete()) {
       return;
     }
@@ -89,7 +104,7 @@ public class InventoryCheckEvent implements Listener {
         break;
       }
 
-      if (!player.getInventory().contains(currentMaterial)) {
+      if (!p.getInventory().contains(currentMaterial)) {
         break;
       }
 

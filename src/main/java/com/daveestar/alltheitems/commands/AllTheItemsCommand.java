@@ -6,7 +6,6 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
 import com.daveestar.alltheitems.Main;
-import com.daveestar.alltheitems.enums.Permissions;
 import com.daveestar.alltheitems.gui.CurrentItemsGUI;
 
 import net.md_5.bungee.api.ChatColor;
@@ -26,11 +25,6 @@ public class AllTheItemsCommand implements CommandExecutor {
     }
 
     Player p = (Player) cs;
-
-    if (!p.hasPermission(Permissions.ADMIN.getName())) {
-      p.sendMessage(Main.getNoPermissionMessage(Permissions.ADMIN));
-      return true;
-    }
 
     if (args.length > 0) {
       p.sendMessage(Main.getPrefix() + ChatColor.RED + "Usage: " + ChatColor.YELLOW + "/alltheitems");

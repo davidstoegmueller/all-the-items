@@ -5,6 +5,7 @@ import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Consumer;
@@ -126,12 +127,12 @@ public class CurrentItemsGUI {
     currentItemsGUI.open(p);
   }
 
-  private void _addCurrentAndQueueEntries(Player player, Map<String, ItemStack> entries,
+  private void _addCurrentAndQueueEntries(Player p, Map<String, ItemStack> entries,
       Map<String, Integer> customSlots) {
     List<String> itemQueue = _allTheItemsManager.getQueue();
     DynamicSlots dynamicSlots = _getDynamicSlots(itemQueue);
 
-    entries.put(_KEY_CURRENT_ITEM, _createCurrentItemStateItem(player));
+    entries.put(_KEY_CURRENT_ITEM, _createCurrentItemStateItem(p));
     customSlots.put(_KEY_CURRENT_ITEM, dynamicSlots.currentItemSlot());
 
     for (int queueOffset = 1; queueOffset <= _MAX_VISIBLE_QUEUE_ITEMS; queueOffset++) {
@@ -170,7 +171,7 @@ public class CurrentItemsGUI {
   // CREATE ITEMS
   // ------------
 
-  private ItemStack _createCurrentItemStateItem(Player player) {
+  private ItemStack _createCurrentItemStateItem(Player p) {
     List<String> itemQueue = _allTheItemsManager.getQueue();
     String currentItemName = itemQueue.isEmpty() ? null : itemQueue.get(0);
     boolean isComplete = _allTheItemsManager.isComplete();
@@ -203,7 +204,7 @@ public class CurrentItemsGUI {
         _GUI_LORE_PREFIX + "#1 - Current Item",
         _GUI_LORE_PREFIX + "Collect this item to progress."));
 
-    if (player.hasPermission(Permissions.ADMIN.getName())) {
+    if (p.hasPermission(Permissions.ADMIN.getName())) {
       lore.add("");
       lore.add(_GUI_LORE_PREFIX + "Shift + Left-Click: Skip for later");
       lore.add(_GUI_LORE_PREFIX + "Shift + Right-Click: Collect & Next Item");
@@ -269,6 +270,8 @@ public class CurrentItemsGUI {
     int totalItemsAmount = _allTheItemsManager.getTotalItemsAmount();
     int remainingItemsAmount = _allTheItemsManager.getRemainingItemsAmount();
     int collectedItemsAmount = _allTheItemsManager.getCollectedItemsAmount();
+    double progressPercentage = _allTheItemsManager.getProgressPercentage();
+    String progressPercentageDisplay = String.format(Locale.ROOT, "%.1f%%", progressPercentage);
 
     String currentItem = _allTheItemsManager.getCurrentItem();
     Material currentMaterial = currentItem == null ? null : Material.matchMaterial(currentItem);
@@ -291,6 +294,7 @@ public class CurrentItemsGUI {
             _GUI_LORE_PREFIX + "Total Items: " + ChatColor.YELLOW + totalItemsAmount,
             _GUI_LORE_PREFIX + "Items Remaining: " + ChatColor.YELLOW + remainingItemsAmount,
             _GUI_LORE_PREFIX + "Items Collected: " + ChatColor.YELLOW + collectedItemsAmount,
+            _GUI_LORE_PREFIX + "Progress: " + ChatColor.YELLOW + progressPercentageDisplay,
             _GUI_LORE_PREFIX + "Current Item: " + ChatColor.YELLOW + currentItemName));
   }
 

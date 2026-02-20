@@ -5,6 +5,7 @@ import java.util.Arrays;
 import java.util.LinkedHashSet;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
@@ -52,12 +53,15 @@ public class AllTheItemsManager {
       Material.APPLE,
       Material.GLASS);
 
+  private final Main _plugin;
   private final Config _stateConfig;
   private final Config _settingsConfig;
   private final FileConfiguration _stateFileConfig;
   private final FileConfiguration _settingsFileConfig;
 
   public AllTheItemsManager(Config stateConfig, Config settingsConfig) {
+    this._plugin = Main.getInstance();
+
     this._stateConfig = stateConfig;
     this._settingsConfig = settingsConfig;
 
@@ -67,10 +71,12 @@ public class AllTheItemsManager {
 
   public void initGamemode() {
     if (!isGamemodeEnabled()) {
+      _refreshBossBar();
       return;
     }
 
     if (isComplete()) {
+      _refreshBossBar();
       return;
     }
 
@@ -80,10 +86,13 @@ public class AllTheItemsManager {
       resetGamemode();
       return;
     }
+
+    _refreshBossBar();
   }
 
   public void resetGamemode() {
     if (!isGamemodeEnabled()) {
+      _refreshBossBar();
       return;
     }
 
@@ -98,14 +107,17 @@ public class AllTheItemsManager {
     _fillQueue(itemQueue, remainingItems, null);
 
     _saveState(remainingItems, collectedItems, itemQueue);
+    _refreshBossBar();
   }
 
   public String nextItem() {
     if (!isGamemodeEnabled()) {
+      _refreshBossBar();
       return null;
     }
 
     if (isComplete()) {
+      _refreshBossBar();
       return null;
     }
 
@@ -115,6 +127,7 @@ public class AllTheItemsManager {
 
     if (itemQueue.isEmpty()) {
       _saveState(remainingItems, collectedItems, itemQueue);
+      _refreshBossBar();
       return null;
     }
 
@@ -123,6 +136,7 @@ public class AllTheItemsManager {
     if (currentItem == null || !remainingItems.contains(currentItem)) {
       _fillQueue(itemQueue, remainingItems, null);
       _saveState(remainingItems, collectedItems, itemQueue);
+      _refreshBossBar();
       return itemQueue.isEmpty() ? null : itemQueue.get(0);
     }
 
@@ -133,16 +147,19 @@ public class AllTheItemsManager {
 
     _fillQueue(itemQueue, remainingItems, null);
     _saveState(remainingItems, collectedItems, itemQueue);
+    _refreshBossBar();
 
     return itemQueue.isEmpty() ? null : itemQueue.get(0);
   }
 
   public String skipItem() {
     if (!isGamemodeEnabled()) {
+      _refreshBossBar();
       return null;
     }
 
     if (isComplete()) {
+      _refreshBossBar();
       return null;
     }
 
@@ -152,6 +169,7 @@ public class AllTheItemsManager {
 
     if (itemQueue.isEmpty()) {
       _saveState(remainingItems, collectedItems, itemQueue);
+      _refreshBossBar();
       return null;
     }
 
@@ -159,6 +177,7 @@ public class AllTheItemsManager {
 
     _fillQueue(itemQueue, remainingItems, skippedItem);
     _saveState(remainingItems, collectedItems, itemQueue);
+    _refreshBossBar();
 
     return itemQueue.isEmpty() ? null : itemQueue.get(0);
   }
@@ -223,6 +242,31 @@ public class AllTheItemsManager {
   public void setGamemodeEnabled(boolean enabled) {
     _settingsFileConfig.set(_KEY_GAMEMODE_ENABLED, enabled);
     _settingsConfig.save();
+    _refreshBossBar();
+  }
+
+  public void syncBossBarForPlayer(Player p) {
+    if (_plugin.getBossBarUtils() == null || p == null) {
+      return;
+    }
+
+    String currentItem = getCurrentItem();
+    if (!_shouldDisplayBossBar(currentItem)) {
+      _plugin.getBossBarUtils().removePlayer(p);
+      return;
+    }
+
+    _plugin.getBossBarUtils().update(_buildBossBarTitle(currentItem), getProgressPercentage() / 100.0);
+    _plugin.getBossBarUtils().addPlayer(p);
+    _plugin.getBossBarUtils().setVisible(true);
+  }
+
+  public void clearBossBarForPlayer(Player p) {
+    if (_plugin.getBossBarUtils() == null || p == null) {
+      return;
+    }
+
+    _plugin.getBossBarUtils().removePlayer(p);
   }
 
   public boolean isDevMode() {
@@ -239,6 +283,25 @@ public class AllTheItemsManager {
 
   public int getCollectedItemsAmount() {
     return getCollectedItems().size();
+  }
+
+  public double getProgressPercentage() {
+    int totalItems = getTotalItemsAmount();
+    if (totalItems <= 0) {
+      return 0.0;
+    }
+
+    double progress = ((double) getCollectedItemsAmount() / (double) totalItems) * 100.0;
+
+    if (progress < 0.0) {
+      return 0.0;
+    }
+
+    if (progress > 100.0) {
+      return 100.0;
+    }
+
+    return progress;
   }
 
   // ----------------
@@ -379,69 +442,123 @@ public class AllTheItemsManager {
   private void _broadcast(String message, BroadcastCelebration celebration) {
     String prefixedMessage = Main.getPrefix() + message;
 
-    for (Player player : Bukkit.getOnlinePlayers()) {
-      player.sendMessage(prefixedMessage);
+    for (Player p : Bukkit.getOnlinePlayers()) {
+      p.sendMessage(prefixedMessage);
 
       if (celebration != null) {
-        _playBroadcastCelebration(player, celebration);
+        _playBroadcastCelebration(p, celebration);
       }
     }
   }
 
-  private void _playBroadcastCelebration(Player player, BroadcastCelebration celebration) {
+  private void _playBroadcastCelebration(Player p, BroadcastCelebration celebration) {
     switch (celebration) {
       case COLLECTED:
-        _playCollectedCelebration(player);
+        _playCollectedCelebration(p);
         break;
       case SKIPPED:
-        _playCollectedCelebration(player);
+        _playCollectedCelebration(p);
         break;
       case NEW_ITEM:
-        _playCollectedCelebration(player);
+        _playCollectedCelebration(p);
         break;
       case COMPLETE:
-        _playCompleteCelebration(player);
+        _playCompleteCelebration(p);
         break;
       default:
         break;
     }
   }
 
-  private void _playCollectedCelebration(Player player) {
-    player.playSound(player, Sound.ENTITY_PLAYER_LEVELUP, 0.7F, 1.25F);
-    player.playSound(player, Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 0.6F, 1.45F);
+  private void _playCollectedCelebration(Player p) {
+    p.playSound(p, Sound.ENTITY_PLAYER_LEVELUP, 0.7F, 1.25F);
+    p.playSound(p, Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 0.6F, 1.45F);
 
-    _spawnParticles(player, Particle.TOTEM_OF_UNDYING, 24, 0.45, 0.8, 0.45, 0.02);
-    _spawnParticles(player, Particle.HAPPY_VILLAGER, 18, 0.55, 0.9, 0.55, 0.06);
-    _spawnParticles(player, Particle.FLAME, 14, 0.4, 0.7, 0.4, 0.01);
+    _spawnParticles(p, Particle.TOTEM_OF_UNDYING, 24, 0.45, 0.8, 0.45, 0.02);
+    _spawnParticles(p, Particle.HAPPY_VILLAGER, 18, 0.55, 0.9, 0.55, 0.06);
+    _spawnParticles(p, Particle.FLAME, 14, 0.4, 0.7, 0.4, 0.01);
   }
 
-  private void _playCompleteCelebration(Player player) {
-    player.playSound(player, Sound.UI_TOAST_CHALLENGE_COMPLETE, 0.9F, 1.0F);
-    player.playSound(player, Sound.ENTITY_PLAYER_LEVELUP, 1.0F, 0.7F);
+  private void _playCompleteCelebration(Player p) {
+    p.playSound(p, Sound.UI_TOAST_CHALLENGE_COMPLETE, 0.9F, 1.0F);
+    p.playSound(p, Sound.ENTITY_PLAYER_LEVELUP, 1.0F, 0.7F);
 
-    _spawnParticles(player, Particle.TOTEM_OF_UNDYING, 36, 0.65, 1.1, 0.65, 0.03);
-    _spawnParticles(player, Particle.END_ROD, 28, 0.75, 1.15, 0.75, 0.04);
-    _spawnParticles(player, Particle.HAPPY_VILLAGER, 24, 0.75, 1.0, 0.75, 0.08);
-    _spawnParticles(player, Particle.FLAME, 20, 0.55, 0.95, 0.55, 0.01);
-    _spawnParticles(player, Particle.PORTAL, 26, 0.75, 1.05, 0.75, 0.3);
+    _spawnParticles(p, Particle.TOTEM_OF_UNDYING, 36, 0.65, 1.1, 0.65, 0.03);
+    _spawnParticles(p, Particle.END_ROD, 28, 0.75, 1.15, 0.75, 0.04);
+    _spawnParticles(p, Particle.HAPPY_VILLAGER, 24, 0.75, 1.0, 0.75, 0.08);
+    _spawnParticles(p, Particle.FLAME, 20, 0.55, 0.95, 0.55, 0.01);
+    _spawnParticles(p, Particle.PORTAL, 26, 0.75, 1.05, 0.75, 0.3);
 
-    CompletionFireworkShow.play(Main.getInstance(), player);
+    CompletionFireworkShow.play(_plugin, p);
 
-    Bukkit.getScheduler().runTaskLater(Main.getInstance(), () -> {
-      if (!player.isOnline()) {
+    Bukkit.getScheduler().runTaskLater(_plugin, () -> {
+      if (!p.isOnline()) {
         return;
       }
 
-      player.playSound(player, Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 0.75F, 1.65F);
-      _spawnParticles(player, Particle.TOTEM_OF_UNDYING, 20, 0.55, 0.95, 0.55, 0.02);
-      _spawnParticles(player, Particle.END_ROD, 18, 0.55, 0.95, 0.55, 0.03);
+      p.playSound(p, Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 0.75F, 1.65F);
+      _spawnParticles(p, Particle.TOTEM_OF_UNDYING, 20, 0.55, 0.95, 0.55, 0.02);
+      _spawnParticles(p, Particle.END_ROD, 18, 0.55, 0.95, 0.55, 0.03);
     }, 8L);
   }
 
-  private void _spawnParticles(Player player, Particle particle, int count, double offsetX, double offsetY,
+  private void _spawnParticles(Player p, Particle particle, int count, double offsetX, double offsetY,
       double offsetZ, double extra) {
-    player.spawnParticle(particle, player.getLocation().add(0, 1.0, 0), count, offsetX, offsetY, offsetZ, extra);
+    p.spawnParticle(particle, p.getLocation().add(0, 1.0, 0), count, offsetX, offsetY, offsetZ, extra);
+  }
+
+  private void _refreshBossBar() {
+    if (_plugin.getBossBarUtils() == null) {
+      return;
+    }
+
+    String currentItem = getCurrentItem();
+    if (!_shouldDisplayBossBar(currentItem)) {
+      _plugin.getBossBarUtils().hide();
+      return;
+    }
+
+    _plugin.getBossBarUtils().update(_buildBossBarTitle(currentItem), getProgressPercentage() / 100.0);
+    _plugin.getBossBarUtils().showToAll();
+  }
+
+  private boolean _shouldDisplayBossBar(String currentItem) {
+    return isGamemodeEnabled() && !isComplete() && currentItem != null && !currentItem.isBlank();
+  }
+
+  private String _buildBossBarTitle(String currentItem) {
+    String itemDisplayName = _toDisplayName(currentItem);
+    String progressPercentageDisplay = String.format(Locale.ROOT, "%.1f%%", getProgressPercentage());
+    String title = Main.getBossBarPrefix() + "Item: " + ChatColor.YELLOW + itemDisplayName + ChatColor.GRAY
+        + " (" + getCollectedItemsAmount() + "/" + getTotalItemsAmount() + " » "
+        + progressPercentageDisplay + ")";
+
+    return title;
+  }
+
+  private String _toDisplayName(String itemName) {
+    Material material = Material.matchMaterial(itemName);
+    if (material == null) {
+      return itemName;
+    }
+
+    String normalizedName = material.name().toLowerCase(Locale.ROOT).replace('_', ' ');
+    String[] words = normalizedName.split(" ");
+    StringBuilder result = new StringBuilder();
+
+    for (String word : words) {
+      if (word.isEmpty()) {
+        continue;
+      }
+
+      if (result.length() > 0) {
+        result.append(" ");
+      }
+
+      result.append(Character.toUpperCase(word.charAt(0))).append(word.substring(1));
+    }
+
+    return result.toString();
   }
 
   // -----

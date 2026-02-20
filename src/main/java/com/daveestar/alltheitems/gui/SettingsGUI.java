@@ -65,22 +65,22 @@ public class SettingsGUI {
     Map<String, CustomGUI.ClickAction> actions = new LinkedHashMap<>();
     actions.put(_KEY_TOGGLE_GAMEMODE, new CustomGUI.ClickAction() {
       @Override
-      public void onLeftClick(Player player) {
-        _handleToggleGamemode(player, parentGUI);
+      public void onLeftClick(Player p) {
+        _handleToggleGamemode(p, parentGUI);
       }
     });
 
     actions.put(_KEY_RESET_GAMEMODE, new CustomGUI.ClickAction() {
       @Override
-      public void onLeftClick(Player player) {
-        _handleResetGamemode(player);
+      public void onLeftClick(Player p) {
+        _handleResetGamemode(p);
       }
     });
 
     actions.put(_KEY_MANUAL_FIREWORK_SHOW, new CustomGUI.ClickAction() {
       @Override
-      public void onLeftClick(Player player) {
-        _handleManualFireworkShow(player);
+      public void onLeftClick(Player p) {
+        _handleManualFireworkShow(p);
       }
     });
 

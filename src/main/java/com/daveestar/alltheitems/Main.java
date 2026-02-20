@@ -3,6 +3,8 @@ package com.daveestar.alltheitems;
 import java.util.logging.Logger;
 
 import org.bstats.bukkit.Metrics;
+import org.bukkit.boss.BarColor;
+import org.bukkit.boss.BarStyle;
 import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -10,6 +12,7 @@ import com.daveestar.alltheitems.commands.AllTheItemsCommand;
 import com.daveestar.alltheitems.enums.Permissions;
 import com.daveestar.alltheitems.events.InventoryCheckEvent;
 import com.daveestar.alltheitems.manager.AllTheItemsManager;
+import com.daveestar.alltheitems.utils.CustomBossBar;
 import com.daveestar.alltheitems.utils.Config;
 
 import net.md_5.bungee.api.ChatColor;
@@ -20,6 +23,7 @@ public class Main extends JavaPlugin {
   private static final int BSTATS_PLUGIN_ID = 29352;
 
   private AllTheItemsManager _allTheItemsManager;
+  private CustomBossBar _gamemodeBossBar;
 
   @Override
   public void onEnable() {
@@ -28,6 +32,7 @@ public class Main extends JavaPlugin {
     Config stateConfig = new Config("state.yml", getDataFolder());
     Config settingsConfig = new Config("settings.yml", getDataFolder(), this, true);
 
+    _gamemodeBossBar = new CustomBossBar("", BarColor.YELLOW, BarStyle.SOLID);
     _allTheItemsManager = new AllTheItemsManager(stateConfig, settingsConfig);
     _allTheItemsManager.initGamemode();
 
@@ -42,6 +47,8 @@ public class Main extends JavaPlugin {
 
   @Override
   public void onDisable() {
+    _gamemodeBossBar.shutdown();
+
     LOGGER.info("All the Items - DISABLED");
   }
 
@@ -51,6 +58,10 @@ public class Main extends JavaPlugin {
 
   public AllTheItemsManager getAllTheItemsManager() {
     return _allTheItemsManager;
+  }
+
+  public CustomBossBar getBossBarUtils() {
+    return _gamemodeBossBar;
   }
 
   // --------------------------
@@ -73,6 +84,10 @@ public class Main extends JavaPlugin {
 
   public static String getPrefix() {
     return ChatColor.GRAY + "[" + ChatColor.YELLOW + "ATI" + ChatColor.GRAY + "] ";
+  }
+
+  public static String getBossBarPrefix() {
+    return ChatColor.YELLOW + "» " + ChatColor.GRAY;
   }
 
   public static String getNoPlayerMessage() {
