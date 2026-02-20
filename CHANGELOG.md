@@ -6,7 +6,7 @@ All notable changes to this project are documented in this file.
 
 - Initial Paper plugin release for the All the Items challenge.
 - Main command `/alltheitems` with alias `/ati`.
-- Permission model with `alltheitems.admin`.
+- Permission model with `alltheitems.admin` to access gamemode settings.
 - Current Items GUI with:
   - Current target display
   - Queue preview
@@ -28,6 +28,7 @@ All notable changes to this project are documented in this file.
 - Configurable settings via `settings.yml`:
   - `gamemode.enabled`
   - `items.excluded`
+  - `queue.itemsAmount`
 - Queue normalization and refill logic to maintain stable target flow.
 - Broadcast system for:
   - Item collected
@@ -38,4 +39,6 @@ All notable changes to this project are documented in this file.
   - Particles and sounds for progression
   - Enhanced completion celebration
   - Firework show utility
+- Added bossbar to indicate progress
+- Added CustomDialog to set queue item amount
 - bStats metrics integration.
