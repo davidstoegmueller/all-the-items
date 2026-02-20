@@ -67,6 +67,10 @@ public class RemainingItemsGUI {
     return entries;
   }
 
+  // -----
+  // ITEMS
+  // -----
+
   private ItemStack _createRemainingItem(String itemName) {
     Material material = Material.matchMaterial(itemName);
 
@@ -88,6 +92,10 @@ public class RemainingItemsGUI {
             "",
             Main.getGuiLorePrefix() + ChatColor.RED + "NOT COLLECTED"));
   }
+
+  // -----------
+  // ITEM HELPER
+  // -----------
 
   private ItemStack _createItem(Material material, String displayName, boolean setEnchanted, List<String> lore) {
     ItemStack item = new ItemStack(material);

@@ -84,6 +84,10 @@ public class SettingsGUI {
     settingsGUI.open(p);
   }
 
+  // --------------
+  // ACTION HANDLER
+  // --------------
+
   private void _handleToggleGamemode(Player p, CustomGUI parentGUI) {
     boolean wasEnabled = _allTheItemsManager.isGamemodeEnabled();
     boolean isEnabled = !wasEnabled;
@@ -121,6 +125,10 @@ public class SettingsGUI {
 
     p.closeInventory();
   }
+
+  // -----
+  // ITEMS
+  // -----
 
   private ItemStack _createToggleGamemodeItem() {
     boolean isEnabled = _allTheItemsManager.isGamemodeEnabled();
@@ -163,6 +171,10 @@ public class SettingsGUI {
             "",
             Main.getGuiLorePrefix() + "Left-Click: Start firework show"));
   }
+
+  // -----------
+  // ITEM HELPER
+  // -----------
 
   private ItemStack _createItem(Material material, String displayName, boolean setEnchanted, List<String> lore) {
     ItemStack item = new ItemStack(material);

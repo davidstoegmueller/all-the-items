@@ -85,6 +85,10 @@ public class CollectedItemsGUI {
     return entries;
   }
 
+  // ----
+  // ITEM
+  // ----
+
   private ItemStack _createCollectedItem(String itemName, long collectedTimestamp) {
     Material material = Material.matchMaterial(itemName);
 
@@ -111,6 +115,10 @@ public class CollectedItemsGUI {
             Main.getGuiLorePrefix() + ChatColor.GREEN + "COLLECTED"));
   }
 
+  // -------
+  // HELPERS
+  // -------
+
   private String _formatTimestamp(long timestamp) {
     if (timestamp <= 0L) {
       return "Unknown";
@@ -118,6 +126,10 @@ public class CollectedItemsGUI {
 
     return _TIMESTAMP_FORMATTER.format(Instant.ofEpochMilli(timestamp));
   }
+
+  // -----------
+  // ITEM HELPER
+  // -----------
 
   private ItemStack _createItem(Material material, String displayName, boolean setEnchanted, List<String> lore) {
     ItemStack item = new ItemStack(material);

@@ -162,9 +162,9 @@ public class CurrentItemsGUI {
     return new DynamicSlots(currentItemSlot, firstQueueItemSlot);
   }
 
-  // ------------
-  // CREATE ITEMS
-  // ------------
+  // -----
+  // ITEMS
+  // -----
 
   private ItemStack _createCurrentItemStateItem(Player p) {
     List<String> itemQueue = _allTheItemsManager.getQueue();
@@ -348,9 +348,9 @@ public class CurrentItemsGUI {
     return item;
   }
 
-  // --------------------
-  // CLICK ACTION HANDLER
-  // --------------------
+  // --------------
+  // ACTION HANDLER
+  // --------------
 
   private void _handleSkipItem(Player p) {
     if (_isGamemodeDisabled(p)) {
@@ -408,9 +408,9 @@ public class CurrentItemsGUI {
     displayCurrentItemsGUI(p);
   }
 
-  // -------------------
-  // CLICK ACTION HELPER
-  // -------------------
+  // -------
+  // HELPERS
+  // -------
 
   private boolean _isGamemodeDisabled(Player p) {
     if (_allTheItemsManager.isGamemodeEnabled()) {
@@ -420,6 +420,10 @@ public class CurrentItemsGUI {
     p.sendMessage(Main.getPrefix() + ChatColor.RED + "Game mode is disabled. Action blocked.");
     return true;
   }
+
+  // -------------
+  // ACTION HELPER
+  // -------------
 
   private CustomGUI.ClickAction _clickAction(Consumer<Player> onLeft, Consumer<Player> onRight,
       Consumer<Player> onShiftLeft, Consumer<Player> onShiftRight) {

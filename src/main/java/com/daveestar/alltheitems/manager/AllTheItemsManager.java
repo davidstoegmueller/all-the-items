@@ -335,27 +335,27 @@ public class AllTheItemsManager {
   // ----------------
 
   public void broadcastCurrentItemCollected(String itemName) {
-    _broadcast(ChatColor.GRAY + "Current item " + ChatColor.YELLOW + itemName + ChatColor.GRAY + " was collected.",
+    _broadcastToAll(ChatColor.GRAY + "Current item " + ChatColor.YELLOW + itemName + ChatColor.GRAY + " was collected.",
         BroadcastCelebration.COLLECTED);
   }
 
   public void broadcastCurrentItemSkipped(String itemName) {
-    _broadcast(ChatColor.GRAY + "Current item " + ChatColor.YELLOW + itemName + ChatColor.GRAY + " was skipped.",
+    _broadcastToAll(ChatColor.GRAY + "Current item " + ChatColor.YELLOW + itemName + ChatColor.GRAY + " was skipped.",
         BroadcastCelebration.SKIPPED);
   }
 
   public void broadcastNewItem(String itemName) {
-    _broadcast(ChatColor.GRAY + "New item is " + ChatColor.YELLOW + itemName + ChatColor.GRAY + ".",
+    _broadcastToAll(ChatColor.GRAY + "New item is " + ChatColor.YELLOW + itemName + ChatColor.GRAY + ".",
         BroadcastCelebration.NEW_ITEM);
   }
 
   public void broadcastAllItemsCompleted() {
-    _broadcast(ChatColor.GREEN + "All items have been collected.", BroadcastCelebration.COMPLETE);
+    _broadcastToAll(ChatColor.GREEN + "All items have been collected.", BroadcastCelebration.COMPLETE);
   }
 
-  // ----------------
-  // PICK RANDOM ITEM
-  // ----------------
+  // ------------------------
+  // QUEUE & PICK RANDOM ITEM
+  // ------------------------
 
   private String _pickRandomRemainingItem(List<String> remainingItems) {
     return remainingItems.get(ThreadLocalRandom.current().nextInt(remainingItems.size()));
@@ -417,7 +417,7 @@ public class AllTheItemsManager {
   }
 
   // --------------
-  // SAVE TO CONFIG
+  // CONFIG HELPERS
   // --------------
 
   private void _saveState(List<String> remainingItems, Map<String, CollectedItem> collectedItems,
@@ -465,7 +465,11 @@ public class AllTheItemsManager {
     return materials;
   }
 
-  private void _broadcast(String message, BroadcastCelebration celebration) {
+  // -----------------
+  // BROADCAST HELPERS
+  // -----------------
+
+  private void _broadcastToAll(String message, BroadcastCelebration celebration) {
     String prefixedMessage = Main.getPrefix() + message;
 
     for (Player p : Bukkit.getOnlinePlayers()) {
@@ -495,6 +499,10 @@ public class AllTheItemsManager {
         break;
     }
   }
+
+  // ------------
+  // CELEBRATIONS
+  // ------------
 
   private void _playCollectedCelebration(Player p) {
     p.playSound(p, Sound.ENTITY_PLAYER_LEVELUP, 0.7F, 1.25F);
@@ -532,6 +540,10 @@ public class AllTheItemsManager {
       double offsetZ, double extra) {
     p.spawnParticle(particle, p.getLocation().add(0, 1.0, 0), count, offsetX, offsetY, offsetZ, extra);
   }
+
+  // -------
+  // BOSSBAR
+  // -------
 
   private void _refreshBossBar() {
     if (_plugin.getBossBarUtils() == null) {
