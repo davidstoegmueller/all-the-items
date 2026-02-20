@@ -45,7 +45,8 @@ public class AllTheItemsManager {
   private static final String _KEY_EXCLUDED_ITEMS = "items.excluded";
   private static final String _KEY_GAMEMODE_ENABLED = "gamemode.enabled";
 
-  private static final boolean _DEV_MODE = true;
+  private static final boolean _DEV_MODE = false;
+
   private static final List<Material> _DEV_MODE_ITEMS = Arrays.asList(
       Material.STONE,
       Material.OAK_LOG,
