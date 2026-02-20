@@ -30,7 +30,7 @@ public class CollectedItemsGUI {
   private static final int _GUI_ROWS = 6;
 
   private static final DateTimeFormatter _TIMESTAMP_FORMATTER = DateTimeFormatter
-      .ofPattern("yyyy-MM-dd HH:mm:ss")
+      .ofPattern("dd.MM.yyyy HH:mm:ss")
       .withZone(ZoneId.systemDefault());
 
   private final Main _plugin;
