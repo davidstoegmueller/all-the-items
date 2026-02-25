@@ -2,6 +2,10 @@
 
 All notable changes to this project are documented in this file.
 
+## 🚀 [1.0.1] - 25.02.2026
+
+- ⚙️ Build the jar file using Java 21.
+
 ## 🚀 [1.0.0] - 20.02.2026
 
 - 🎉 Initial Paper plugin release for the All the Items challenge.
