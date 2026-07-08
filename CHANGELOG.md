@@ -2,6 +2,10 @@
 
 All notable changes to this project are documented in this file.
 
+## 🚀 [1.0.2] - 08.07.2026
+
+- 📦 **Minecraft Version 26.1.2** - Upgraded the plugin to minecraft version 26.1.2
+
 ## 🚀 [1.0.1] - 25.02.2026
 
 - ⚙️ Build the jar file using Java 21.
