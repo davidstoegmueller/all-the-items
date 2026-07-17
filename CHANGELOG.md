@@ -2,6 +2,11 @@
 
 All notable changes to this project are documented in this file.
 
+## 🚀 [1.0.3] - 17.07.2026
+
+- 📦 **Minecraft Version 26.2** - Upgraded the plugin to minecraft version 26.2
+- 🛠️ **New Items** - Updated new items and unobtainable items (`SULFUR_CUBE_SPAWN_EGG`)
+
 ## 🚀 [1.0.2] - 08.07.2026
 
 - 📦 **Minecraft Version 26.1.2** - Upgraded the plugin to minecraft version 26.1.2
