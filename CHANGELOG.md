@@ -2,6 +2,10 @@
 
 All notable changes to this project are documented in this file.
 
+## 🚀 [1.0.4] - 08.10.2026
+
+- 📦 **Minecraft Version 26.3** - Upgraded the plugin to minecraft version 26.3
+
 ## 🚀 [1.0.3] - 17.07.2026
 
 - 📦 **Minecraft Version 26.2** - Upgraded the plugin to minecraft version 26.2

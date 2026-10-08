@@ -11,7 +11,7 @@ Collect every obtainable item once and celebrate every milestone together. ✨
 Works standalone, but it is **best combined with BetterVanilla SMP** for extra QoL features:
 [BetterVanilla on Modrinth](https://modrinth.com/plugin/bettervanilla-smp)
 
-Tested on Paper 1.21.11
+Tested on Paper 26.3 and newer.
 
 ## Table of Contents
 
